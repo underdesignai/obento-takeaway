@@ -45,17 +45,20 @@ const localISO = (d: Date) =>
 
 function extractTimeStr(horaRecogida: string): string {
   if (!horaRecogida) return "";
-  const cleaned = horaRecogida.replace(/[^0-9:]/g, "");
-  if (cleaned.includes(":")) {
-    const [hh, mm] = cleaned.split(":");
-    return `${hh.padStart(2, "0")}:${mm.substring(0, 2)}`;
-  }
+  const match = horaRecogida.match(/(\d{1,2}:\d{2})/);
+  if (match) return match[1];
   return horaRecogida;
 }
 
 function parseHoraMin(horaRecogida: string): number {
-  const [hh, mm] = extractTimeStr(horaRecogida).split(":").map(Number);
-  return (hh || 0) * 60 + (mm || 0);
+  const timeStr = extractTimeStr(horaRecogida);
+  if (timeStr && timeStr.includes(":")) {
+    const [hh, mm] = timeStr.split(":").map(Number);
+    return (hh || 0) * 60 + (mm || 0);
+  }
+  // Default for "lo antes posible" or unspecified: treat as now + 25 mins
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes() + 25;
 }
 
 function formatHora(horaRecogida: string): string {
@@ -299,7 +302,14 @@ function OrderDetailPopup({ p, lang, onClose }: { p: PedidoDB; lang: string; onC
                 <span style={{ fontSize: 24 }}>🕐</span>
                 <div>
                   <div style={{ fontSize: 10, color: "#a89f8d", textTransform: "uppercase", letterSpacing: "0.1em" }}>{lang === "en" ? "Pickup Time" : "Hora de Recogida"}</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "#f3ede0", fontFamily: "monospace" }}>{hora}</div>
+                  <div style={{
+                    fontSize: hora.length > 5 ? 16 : 22,
+                    fontWeight: 700,
+                    color: "#f3ede0",
+                    fontFamily: hora.length > 5 ? "inherit" : "monospace"
+                  }}>
+                    {hora}
+                  </div>
                 </div>
               </div>
             )}
@@ -405,9 +415,19 @@ function PedidoCard({ p, lang, onAction }: {
             </div>
           )}
           {hora && (
-            <div style={{ marginTop: "0.3rem", display: "flex", alignItems: "baseline", gap: "0.4rem" }}>
-              <span style={{ fontSize: 10, color: "#a89f8d", textTransform: "uppercase", letterSpacing: "0.1em" }}>{lang === "en" ? "Pickup" : "Recogida"}</span>
-              <span style={{ fontSize: 24, fontWeight: 800, color: "#f3ede0", fontFamily: "monospace", lineHeight: 1 }}>{hora}</span>
+            <div style={{ marginTop: "0.3rem", display: "flex", alignItems: "baseline", gap: "0.45rem", flexWrap: "wrap" }}>
+              <span style={{ fontSize: 10, color: "#a89f8d", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>
+                {lang === "en" ? "Pickup" : "Recogida"}
+              </span>
+              <span style={{
+                fontSize: hora.length > 5 ? 13 : 18,
+                fontWeight: 700,
+                color: hora.length > 5 ? "#e2c97e" : "#f3ede0",
+                fontFamily: hora.length > 5 ? "inherit" : "monospace",
+                lineHeight: 1.2
+              }}>
+                {hora}
+              </span>
             </div>
           )}
         </div>
