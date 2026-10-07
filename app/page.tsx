@@ -24,6 +24,11 @@ type PedidoDB = {
   nombre: string;
   telefono?: string | null;
   horaRecogida?: string | null;
+  tipoEntrega?: string | null;
+  direccionEntrega?: string | null;
+  direccionDetalles?: string | null;
+  codigoPostal?: string | null;
+  repartidorNombre?: string | null;
   items: { id: string; name: string; nameEn?: string; qty: number; price: number; categoria?: string; image?: string }[];
   total: number;
   estado: string;
@@ -356,10 +361,10 @@ function PedidoCard({ p, lang, onAction }: {
     {showDetail && <OrderDetailPopup p={p} lang={lang} onClose={() => setShowDetail(false)} />}
     <div style={{ padding: "1.1rem 0.85rem", display: "flex", flexDirection: "column", gap: "0.85rem" }}>
 
-      {/* Fila 1: id + pago + nombre + hora/countdown */}
+      {/* Fila 1: id + pago + delivery chip + nombre + hora/countdown */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
             <span style={{ fontSize: 11, fontFamily: "monospace", color: "#c81e22", fontWeight: 700 }}>
               #{orderNum}
             </span>
@@ -370,8 +375,35 @@ function PedidoCard({ p, lang, onAction }: {
               border: `1px solid ${isPagado ? "rgba(74,222,128,0.25)" : "rgba(251,191,36,0.25)"}` }}>
               {isPagado ? (lang === "en" ? "✓ Paid" : "✓ Pagado") : (lang === "en" ? "💵 Pay on pickup" : "💵 En mano")}
             </span>
+            {(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery") && (
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+                padding: "2px 8px", borderRadius: 20,
+                background: "rgba(59,130,246,0.15)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.35)" }}>
+                🛵 {lang === "en" ? "Delivery" : "A Domicilio"}
+              </span>
+            )}
+            {p.estado === "listo_reparto" && (
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+                padding: "2px 8px", borderRadius: 20,
+                background: "rgba(234,179,8,0.15)", color: "#facc15", border: "1px solid rgba(234,179,8,0.35)", animation: "pulseBlink 1.2s infinite" }}>
+                ⏳ {lang === "en" ? "Awaiting Rider" : "Esperando Rider"}
+              </span>
+            )}
+            {p.estado === "en_camino" && (
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+                padding: "2px 8px", borderRadius: 20,
+                background: "rgba(168,85,247,0.15)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.35)" }}>
+                🛵 {lang === "en" ? "On the way" : "En camino"}
+              </span>
+            )}
           </div>
           <div style={{ fontSize: 19, fontWeight: 700, color: "#f3ede0", lineHeight: 1.2, letterSpacing: "-0.01em" }}>{p.nombre}</div>
+          {p.direccionEntrega && (
+            <div style={{ fontSize: 12, color: "#93c5fd", marginTop: "3px", display: "flex", alignItems: "center", gap: "4px" }}>
+              <span>📍</span>
+              <span style={{ fontWeight: 600 }}>{p.direccionEntrega} {p.direccionDetalles ? `(${p.direccionDetalles})` : ""}</span>
+            </div>
+          )}
           {hora && (
             <div style={{ marginTop: "0.3rem", display: "flex", alignItems: "baseline", gap: "0.4rem" }}>
               <span style={{ fontSize: 10, color: "#a89f8d", textTransform: "uppercase", letterSpacing: "0.1em" }}>{lang === "en" ? "Pickup" : "Recogida"}</span>
@@ -454,13 +486,40 @@ function PedidoCard({ p, lang, onAction }: {
                 ✉️ {lang === "en" ? "Notify" : "Avisar"}
               </button>
             )}
+            {(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery") ? (
+              <button onClick={() => onAction(p.id, "listo_reparto")}
+                style={{ flex: 1, minWidth: 105, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em",
+                  background: "linear-gradient(135deg,#3b82f6,#1d4ed8)",
+                  color: "#ffffff", transition: "opacity 150ms", boxShadow: "0 2px 10px rgba(59,130,246,0.35)" }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                🛵 {lang === "en" ? "Send to Delivery" : "Enviar al Delivery"}
+              </button>
+            ) : (
+              <button onClick={() => onAction(p.id, "entregado")}
+                style={{ flex: 1, minWidth: 90, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em",
+                  background: isPagado ? "linear-gradient(135deg,#c81e22,#99151b)" : "linear-gradient(135deg,#f59e0b,#d97706)",
+                  color: "#ffffff", transition: "opacity 150ms", boxShadow: isPagado ? "0 2px 10px rgba(200,30,34,0.3)" : "0 2px 10px rgba(245,158,11,0.25)" }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                {isPagado ? `🙌 ${lang === "en" ? "Delivered" : "Entregado"}` : `💵 ${lang === "en" ? "Collect" : "Cobrar"}`}
+              </button>
+            )}
+          </>)}
+          {(p.estado === "listo_reparto" || p.estado === "en_camino") && (<>
+            <button onClick={() => onAction(p.id, "listo")}
+              style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", fontWeight: 700, fontSize: 12, background: "rgba(255,255,255,0.04)", color: "rgba(243,237,224,0.5)", transition: "all 150ms" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}>
+              ← {lang === "en" ? "Back" : "Volver"}
+            </button>
             <button onClick={() => onAction(p.id, "entregado")}
-              style={{ flex: 1, minWidth: 90, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em",
-                background: isPagado ? "linear-gradient(135deg,#c81e22,#99151b)" : "linear-gradient(135deg,#f59e0b,#d97706)",
-                color: "#ffffff", transition: "opacity 150ms", boxShadow: isPagado ? "0 2px 10px rgba(200,30,34,0.3)" : "0 2px 10px rgba(245,158,11,0.25)" }}
+              style={{ flex: 1, minWidth: 100, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em",
+                background: "linear-gradient(135deg,#10b981,#059669)",
+                color: "#ffffff", transition: "opacity 150ms", boxShadow: "0 2px 10px rgba(16,185,129,0.3)" }}
               onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
               onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
-              {isPagado ? `🙌 ${lang === "en" ? "Delivered" : "Entregado"}` : `💵 ${lang === "en" ? "Collect" : "Cobrar"}`}
+              ✓ {lang === "en" ? "Delivered" : "Entregado"}
             </button>
           </>)}
         </div>
@@ -771,12 +830,12 @@ function MonitorInner() {
 
   const nuevos     = sortByProximity(pedidosFiltrados.filter(p => p.estado === "nuevo"));
   const preparando = sortByProximity(pedidosFiltrados.filter(p => p.estado === "preparando"));
-  const listos     = sortByProximity(pedidosFiltrados.filter(p => p.estado === "listo"));
+  const listos     = sortByProximity(pedidosFiltrados.filter(p => ["listo", "listo_reparto", "en_camino"].includes(p.estado)));
 
   const COLS = [
     { key: "nuevo"      as const, title: lang === "en" ? "New"       : "Nuevos",     color: "#60a5fa", icon: "🆕", data: nuevos     },
     { key: "preparando" as const, title: lang === "en" ? "Preparing" : "Preparando", color: "#f97316", icon: "👨‍🍳", data: preparando },
-    { key: "listo"      as const, title: lang === "en" ? "Ready"     : "Listos",     color: "#4ade80", icon: "🔔", data: listos     },
+    { key: "listo"      as const, title: lang === "en" ? "Ready & Delivery" : "Listos / Reparto", color: "#4ade80", icon: "🔔", data: listos },
   ];
 
   return (

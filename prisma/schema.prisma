@@ -36,6 +36,14 @@ model pedidos {
   cliente_telefono         String         @db.VarChar(50)
   cliente_email            String?        @db.VarChar(150)
   tipo_entrega             String?        @default("recogida_local") @db.VarChar(50)
+  direccion_entrega        String?
+  direccion_detalles       String?        @db.VarChar(255)
+  codigo_postal            String?        @db.VarChar(10)
+  repartidor_id            String?        @db.VarChar(50)
+  repartidor_nombre        String?        @db.VarChar(100)
+  fecha_salida_reparto     DateTime?      @db.Timestamptz(6)
+  fecha_entregado          DateTime?      @db.Timestamptz(6)
+  tiempo_entrega_minutos   Int?
   hora_recogida            String?        @db.VarChar(50)
   notas                    String?
   metodo_pago              String         @db.VarChar(50)
