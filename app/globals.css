@@ -23,7 +23,19 @@ body {
   font-family: var(--font-dm-sans), system-ui, sans-serif;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  touch-action: pan-x pan-y;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+html {
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent auto-zoom on input focus in mobile browsers */
+input, select, textarea, button {
+  font-size: 16px !important;
 }
 
 ::-webkit-scrollbar {
