@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionRole, deny403 } from "@/lib/auth";
 
 const DISH_IMAGES: Record<string, string> = {
+  // Códigos alfanuméricos previos
   e1: "/images/edamame.jpg",
   e2: "/images/gyozaspollo.jpg",
   e3: "/images/gyozasverdura.jpg",
@@ -43,7 +44,115 @@ const DISH_IMAGES: Record<string, string> = {
   p1: "/images/mochifresa.jpg",
   p2: "/images/mochimango.jpg",
   p3: "/images/mochichocolate.jpg",
+
+  // IDs numéricos de la carta web oficial (MenuItem)
+  "1": "/images/ensaladawakame.jpg",
+  "2": "/images/ebifry.jpg",
+  "3": "/images/edamame.jpg",
+  "4": "/images/gyozaspollo.jpg",
+  "5": "/images/gyozasverdura.jpg",
+  "6": "/images/gyozaslangostino.jpg",
+  "7": "/images/samosas.jpg",
+  "8": "/images/takoyaki.jpg",
+  "9": "/images/nigiriatun.jpg",
+  "10": "/images/nigiriatunfoie.jpg",
+  "11": "/images/nigirisalmon.jpg",
+  "12": "/images/nigirisalmonf.jpg",
+  "13": "/images/nigirichutoro.jpg",
+  "14": "/images/nigirivieira.jpg",
+  "15": "/images/nigirianguila.jpg",
+  "16": "/images/nigirihamachi.jpg",
+  "17": "/images/atuntoro.jpg",
+  "18": "/images/rolloatun.jpg",
+  "19": "/images/uramakisalmon.jpg",
+  "20": "/images/uramakipollo.jpg",
+  "21": "/images/rollovegetal.jpg",
+  "22": "/images/rolloblack.jpg",
+  "23": "/images/uramakicangrejo.jpg",
+  "24": "/images/rollosalmon1.jpg",
+  "25": "/images/rolloatun1.jpg",
+  "26": "/images/rollolubina.jpg",
+  "27": "/images/futomaki.jpg",
+  "28": "/images/rollogamba.jpg",
+  "29": "/images/futokara.jpg",
+  "30": "/images/maki2.jpg",
+  "31": "/images/makichu.jpg",
+  "32": "/images/makiatun.jpg",
+  "33": "/images/maki4.jpg",
+  "34": "/images/arrozternera.jpg",
+  "35": "/images/arrozpollo.jpg",
+  "36": "/images/yakisobalangostino.jpg",
+  "37": "/images/yakisobaternera.jpg",
+  "38": "/images/yakisobapollo.jpg",
+  "39": "/images/mochifresa.jpg",
+  "40": "/images/mochimango.jpg",
+  "41": "/images/mochichocolate.jpg",
+  "50": "/images/pollokaraagemango.webp",
 };
+
+const NAME_IMAGE_KEYWORDS: [string[], string][] = [
+  [["wakame"], "/images/ensaladawakame.jpg"],
+  [["ebi fry"], "/images/ebifry.jpg"],
+  [["edamame"], "/images/edamame.jpg"],
+  [["gyoza", "pollo"], "/images/gyozaspollo.jpg"],
+  [["gyoza", "verdura"], "/images/gyozasverdura.jpg"],
+  [["gyoza", "langostino"], "/images/gyozaslangostino.jpg"],
+  [["samosa"], "/images/samosas.jpg"],
+  [["takoyaki"], "/images/takoyaki.jpg"],
+  [["karaage mango"], "/images/pollokaraagemango.webp"],
+  [["pollo karaage"], "/images/pollokaraagemango.webp"],
+  [["foie"], "/images/nigiriatunfoie.jpg"],
+  [["atun toro"], "/images/atuntoro.jpg"],
+  [["chutoro"], "/images/nigirichutoro.jpg"],
+  [["nigiri", "atun"], "/images/nigiriatun.jpg"],
+  [["nigiri", "flambeado"], "/images/nigirisalmonf.jpg"],
+  [["flambeado"], "/images/nigirisalmonf.jpg"],
+  [["nigiri", "salmon"], "/images/nigirisalmon.jpg"],
+  [["nigiri", "vieira"], "/images/nigirivieira.jpg"],
+  [["vieira"], "/images/nigirivieira.jpg"],
+  [["anguila"], "/images/nigirianguila.jpg"],
+  [["hamachi"], "/images/nigirihamachi.jpg"],
+  [["jonetsu"], "/images/rolloatun.jpg"],
+  [["sakura"], "/images/uramakisalmon.jpg"],
+  [["chicken roll"], "/images/uramakipollo.jpg"],
+  [["aurora"], "/images/rollovegetal.jpg"],
+  [["black dragon"], "/images/rolloblack.jpg"],
+  [["shinigami"], "/images/uramakicangrejo.jpg"],
+  [["tartar", "salmon"], "/images/rollosalmon1.jpg"],
+  [["tartar", "atun"], "/images/rolloatun1.jpg"],
+  [["tartar", "lubina"], "/images/rollolubina.jpg"],
+  [["futomaki", "salmon"], "/images/futomaki.jpg"],
+  [["futomaki", "gamba"], "/images/rollogamba.jpg"],
+  [["futomaki", "karaage"], "/images/futokara.jpg"],
+  [["maki", "salmon"], "/images/maki2.jpg"],
+  [["maki", "chutoro"], "/images/makichu.jpg"],
+  [["maki", "atun"], "/images/makiatun.jpg"],
+  [["maki", "aguacate"], "/images/maki4.jpg"],
+  [["arroz", "ternera"], "/images/arrozternera.jpg"],
+  [["arroz", "pollo"], "/images/arrozpollo.jpg"],
+  [["yakisoba", "langostino"], "/images/yakisobalangostino.jpg"],
+  [["yakisoba", "ternera"], "/images/yakisobaternera.jpg"],
+  [["yakisoba", "pollo"], "/images/yakisobapollo.jpg"],
+  [["mochi", "queso"], "/images/mochifresa.jpg"],
+  [["mochi", "fresa"], "/images/mochifresa.jpg"],
+  [["mochi", "mango"], "/images/mochimango.jpg"],
+  [["mochi", "chocolate"], "/images/mochichocolate.jpg"],
+];
+
+function resolveDishImage(dishId: string, name?: string): string {
+  if (dishId && DISH_IMAGES[dishId]) {
+    return DISH_IMAGES[dishId];
+  }
+  if (name) {
+    const clean = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    for (const [kws, path] of NAME_IMAGE_KEYWORDS) {
+      if (kws.every(kw => clean.includes(kw))) {
+        return path;
+      }
+    }
+  }
+  return "/images/placeholder.jpg";
+}
 
 export async function GET() {
   if (!(await getSessionRole())) return deny403();
@@ -64,7 +173,7 @@ export async function GET() {
         price: Number(it.precio_unitario),
         categoria: it.categoria,
         opcion: it.opcion,
-        image: DISH_IMAGES[it.dish_id] ?? "/images/placeholder.jpg",
+        image: resolveDishImage(it.dish_id, it.nombre),
       }));
 
       return {
