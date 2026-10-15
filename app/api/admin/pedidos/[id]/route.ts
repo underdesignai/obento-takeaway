@@ -22,10 +22,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         data: { cliente_notificado: true, updated_at: new Date() },
       });
 
+      const isPagado = pedido.metodo_pago !== "restaurante" && pedido.metodo_pago !== "local";
+
       sendOrderReady(pedido.cliente_email, {
         nombre: pedido.cliente_nombre,
         orderNumber: pedido.numero_pedido || `OB-${String(pedido.id).padStart(4, "0")}`,
         horaRecogida: pedido.hora_recogida ?? undefined,
+        isPagado,
+        total: Number(pedido.total),
         lang: "es",
       }).catch((err) => console.error("Error enviando email en notify:", err));
 
@@ -42,6 +46,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     };
     if (dbEstado === "recibido" || dbEstado === "preparando") {
       dataToUpdate.cliente_notificado = false;
+    }
+    if (dbEstado === "entregado") {
+      dataToUpdate.estado_pago = "pagado";
     }
 
     const pedido = await prisma.pedidos.update({

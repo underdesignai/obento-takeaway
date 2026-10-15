@@ -105,9 +105,33 @@ export async function sendOrderReady(to: string, data: {
   orderNumber: string;
   horaRecogida?: string;
   lang?: string;
+  isPagado?: boolean;
+  total?: number;
 }) {
   const en = data.lang === "en";
   const trackingUrl = `https://pedidos.obentojapanesefood.es/seguimiento?id=${data.orderNumber}`;
+  const totalFormatted = data.total != null ? data.total.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+
+  const paymentNoticeHtml = !data.isPagado && data.total != null ? (en ? `
+    <div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);padding:14px 18px;border-radius:8px;margin-bottom:20px;">
+      <p style="font-size:14px;color:#fbbf24;margin:0;font-weight:700;">
+        💵 Total due on pick-up: ${totalFormatted} €
+      </p>
+      <p style="font-size:12px;color:#d1d5db;margin:4px 0 0;">
+        Payment will be settled at the counter (cash or card).
+      </p>
+    </div>
+  ` : `
+    <div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);padding:14px 18px;border-radius:8px;margin-bottom:20px;">
+      <p style="font-size:14px;color:#fbbf24;margin:0;font-weight:700;">
+        💵 Importe a abonar al recoger: ${totalFormatted} €
+      </p>
+      <p style="font-size:12px;color:#d1d5db;margin:4px 0 0;">
+        El importe total de <strong>${totalFormatted} €</strong> se abonará al recoger tu pedido en el local (en efectivo o tarjeta).
+      </p>
+    </div>
+  `) : "";
+
   const html = baseLayout(en ? `
     <h1 style="font-size:24px;color:#4ade80;margin:0 0 10px;">Your order is ready to pick up! 🍣</h1>
     <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hello <strong>${data.nombre}</strong>, our kitchen team has freshly prepared your order.</p>
@@ -121,6 +145,7 @@ export async function sendOrderReady(to: string, data: {
       </p>
       ${data.horaRecogida ? `<p style="font-size:14px;color:#c9a84c;margin:6px 0 0;">🕐 Scheduled time: <strong>${data.horaRecogida}</strong></p>` : ""}
     </div>
+    ${paymentNoticeHtml}
     <div style="text-align:center;margin:24px 0;">
       <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
         🔴 Track Order Live →
@@ -140,6 +165,7 @@ export async function sendOrderReady(to: string, data: {
       </p>
       ${data.horaRecogida ? `<p style="font-size:14px;color:#c9a84c;margin:6px 0 0;">🕐 Hora acordada: <strong>${data.horaRecogida}</strong></p>` : ""}
     </div>
+    ${paymentNoticeHtml}
     <div style="text-align:center;margin:24px 0;">
       <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
         🔴 Ver Estado en Directo →

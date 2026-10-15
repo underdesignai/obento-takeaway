@@ -579,7 +579,7 @@ function PedidoCard({ p, lang, onAction }: {
                   color: "#ffffff", transition: "opacity 150ms", boxShadow: isPagado ? "0 2px 10px rgba(200,30,34,0.3)" : "0 2px 10px rgba(245,158,11,0.25)" }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
                 onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
-                {isPagado ? `🙌 ${lang === "en" ? "Delivered" : "Entregado"}` : `💵 ${lang === "en" ? "Collect" : "Cobrar"}`}
+                {isPagado ? `🙌 ${lang === "en" ? "Delivered" : "Entregado"}` : `💵 ${lang === "en" ? "Collect & Deliver" : "Cobrar y Entregar"}`}
               </button>
             )}
           </>)}
