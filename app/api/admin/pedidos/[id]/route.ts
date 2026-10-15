@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { sendOrderReady } from "@/lib/email";
+import { sendOrderReady, sendOrderPreparing } from "@/lib/email";
 import { getSessionRole, deny403 } from "@/lib/auth";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -37,6 +37,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         updated_at: new Date(),
       },
     });
+
+    // Envío automático al pasar a 'preparando' si el cliente tiene email registrado
+    if (dbEstado === "preparando" && pedido.cliente_email) {
+      sendOrderPreparing(pedido.cliente_email, {
+        nombre: pedido.cliente_nombre,
+        orderNumber: pedido.numero_pedido || `OB-${String(pedido.id).padStart(4, "0")}`,
+        horaRecogida: pedido.hora_recogida ?? undefined,
+        lang: "es",
+      }).catch((err) => console.error("Error auto-notificando por email en preparando:", err));
+    }
 
     // Envío automático al pasar a 'listo' si el cliente tiene email registrado
     if (dbEstado === "listo" && pedido.cliente_email) {

@@ -2,30 +2,64 @@ import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 
 async function getCredentials() {
-  let from = process.env.EMAIL_FROM;
+  let from = process.env.EMAIL_FROM || "pedidos@obentojapanesefood.es";
   let pass = process.env.EMAIL_PASSWORD;
-  if (!from || !pass) {
+  let resendKey = process.env.RESEND_API_KEY;
+  if (!pass && !resendKey) {
     try {
       const row = await prisma.configuracion.findUnique({ where: { clave: "email_config" } });
       if (row) {
         const cfg = JSON.parse(row.valor);
-        if (!from) from = cfg.from;
-        if (!pass) pass = cfg.password;
+        if (cfg.from) from = cfg.from;
+        if (cfg.password) pass = cfg.password;
+        if (cfg.resend_key) resendKey = cfg.resend_key;
       }
     } catch { /* sin config en BD */ }
   }
-  return { from, pass };
+  return { from, pass, resendKey };
 }
 
-async function getTransporter() {
-  const { from, pass } = await getCredentials();
-  return {
-    transporter: nodemailer.createTransport({
+async function sendEmailTransport(to: string, subject: string, html: string) {
+  const { from, pass, resendKey } = await getCredentials();
+
+  // 1. Resend API prioritario
+  if (resendKey) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: `OBENTO Japanese Food <${from}>`,
+        to: [to],
+        subject,
+        html,
+      }),
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(`Resend API error (${res.status}): ${JSON.stringify(errJson)}`);
+    }
+    return;
+  }
+
+  // 2. Nodemailer SMTP / Gmail
+  if (pass) {
+    const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: { user: from, pass },
-    }),
-    from: from || "pedidos@obentojapanesefood.es",
-  };
+    });
+    await transporter.sendMail({
+      from: `"OBENTO Japanese Food" <${from}>`,
+      to,
+      subject,
+      html,
+    });
+    return;
+  }
+
+  throw new Error("No hay credenciales de email configuradas (falta RESEND_API_KEY o EMAIL_PASSWORD)");
 }
 
 type OrderItem = { name: string; nameEn?: string; qty: number; price: number };
@@ -72,12 +106,12 @@ export async function sendOrderReady(to: string, data: {
   horaRecogida?: string;
   lang?: string;
 }) {
-  const { transporter, from: emailFrom } = await getTransporter();
   const en = data.lang === "en";
+  const trackingUrl = `https://pedidos.obentojapanesefood.es/seguimiento?id=${data.orderNumber}`;
   const html = baseLayout(en ? `
     <h1 style="font-size:24px;color:#4ade80;margin:0 0 10px;">Your order is ready to pick up! 🍣</h1>
     <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hello <strong>${data.nombre}</strong>, our kitchen team has freshly prepared your order.</p>
-    <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:14px 18px;margin-bottom:24px;">
+    <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
       <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Order Reference</p>
       <p style="margin:4px 0 0;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
     </div>
@@ -87,11 +121,16 @@ export async function sendOrderReady(to: string, data: {
       </p>
       ${data.horaRecogida ? `<p style="font-size:14px;color:#c9a84c;margin:6px 0 0;">🕐 Scheduled time: <strong>${data.horaRecogida}</strong></p>` : ""}
     </div>
-    <p style="font-size:13px;color:#9ca3af;margin-top:24px;">Thank you for choosing OBENTO Japanese Food. Enjoy your meal!</p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+        🔴 Track Order Live →
+      </a>
+    </div>
+    <p style="font-size:13px;color:#9ca3af;margin-top:20px;">Thank you for choosing OBENTO Japanese Food. Enjoy your meal!</p>
   ` : `
     <h1 style="font-size:24px;color:#4ade80;margin:0 0 10px;">¡Tu pedido ya está listo! 🍣</h1>
     <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hola <strong>${data.nombre}</strong>, nuestro equipo de cocina ya tiene listo tu pedido recién elaborado.</p>
-    <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:14px 18px;margin-bottom:24px;">
+    <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
       <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Número de pedido</p>
       <p style="margin:4px 0 0;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
     </div>
@@ -101,16 +140,18 @@ export async function sendOrderReady(to: string, data: {
       </p>
       ${data.horaRecogida ? `<p style="font-size:14px;color:#c9a84c;margin:6px 0 0;">🕐 Hora acordada: <strong>${data.horaRecogida}</strong></p>` : ""}
     </div>
-    <p style="font-size:13px;color:#9ca3af;margin-top:24px;">¡Muchas gracias por elegir OBENTO Japanese Food! Que lo disfrutes.</p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+        🔴 Ver Estado en Directo →
+      </a>
+    </div>
+    <p style="font-size:13px;color:#9ca3af;margin-top:20px;">¡Muchas gracias por elegir OBENTO Japanese Food! Que lo disfrutes.</p>
   `);
 
   try {
-    await transporter.sendMail({
-      from: `"OBENTO Japanese Food" <${emailFrom}>`,
-      to,
-      subject: en ? `Your order is ready to pick up! · ${data.orderNumber}` : `¡Tu pedido está listo para recoger! · ${data.orderNumber}`,
-      html,
-    });
+    const subject = en ? `Your order is ready to pick up! · ${data.orderNumber}` : `¡Tu pedido está listo para recoger! · ${data.orderNumber}`;
+    await sendEmailTransport(to, subject, html);
+    console.log(`✉️ Email de pedido listo enviado a ${to} (${data.orderNumber})`);
   } catch (err) {
     console.error("[sendOrderReady error]", err);
   }
@@ -122,33 +163,40 @@ export async function sendOrderPreparing(to: string, data: {
   horaRecogida?: string;
   lang?: string;
 }) {
-  const { transporter, from: emailFrom } = await getTransporter();
   const en = data.lang === "en";
+  const trackingUrl = `https://pedidos.obentojapanesefood.es/seguimiento?id=${data.orderNumber}`;
   const html = baseLayout(en ? `
     <h1 style="font-size:24px;color:#fbbf24;margin:0 0 10px;">Your order is being prepared! 👨‍🍳</h1>
-    <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hi ${data.nombre}, our sushiman is preparing your dishes right now.</p>
-    <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:24px;">
+    <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hi <strong>${data.nombre}</strong>, our sushiman is preparing your dishes right now.</p>
+    <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
       <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Order</p>
       <p style="margin:4px 0 0;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
     </div>
-    <p style="font-size:13px;color:#9ca3af;margin-top:24px;">We will notify you immediately once it's ready.</p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+        🔴 Track Order Live →
+      </a>
+    </div>
+    <p style="font-size:13px;color:#9ca3af;margin-top:20px;">We will notify you immediately once it's ready.</p>
   ` : `
     <h1 style="font-size:24px;color:#fbbf24;margin:0 0 10px;">¡Tu pedido está en cocina! 👨‍🍳</h1>
-    <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hola ${data.nombre}, nuestro sushiman ya está elaborando tus piezas al momento.</p>
-    <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:24px;">
+    <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hola <strong>${data.nombre}</strong>, nuestro sushiman ya está elaborando tus piezas al momento.</p>
+    <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
       <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Pedido</p>
       <p style="margin:4px 0 0;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
     </div>
-    <p style="font-size:13px;color:#9ca3af;margin-top:24px;">Te enviaremos otro aviso en cuanto esté listo para recoger.</p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+        🔴 Ver Estado en Directo →
+      </a>
+    </div>
+    <p style="font-size:13px;color:#9ca3af;margin-top:20px;">Te enviaremos otro aviso en cuanto esté listo para recoger.</p>
   `);
 
   try {
-    await transporter.sendMail({
-      from: `"OBENTO Japanese Food" <${emailFrom}>`,
-      to,
-      subject: en ? `Your order is in the kitchen · ${data.orderNumber}` : `Tu pedido está en cocina · ${data.orderNumber}`,
-      html,
-    });
+    const subject = en ? `Your order is in the kitchen · ${data.orderNumber}` : `Tu pedido está en cocina · ${data.orderNumber}`;
+    await sendEmailTransport(to, subject, html);
+    console.log(`✉️ Email de pedido en cocina enviado a ${to} (${data.orderNumber})`);
   } catch (err) {
     console.error("[sendOrderPreparing error]", err);
   }
