@@ -564,7 +564,7 @@ function PedidoCard({ p, lang, onAction }: {
               </button>
             )}
             {(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery") ? (
-              <button onClick={() => onAction(p.id, "listo_reparto")}
+              <button onClick={() => onAction(p.id, "en_camino")}
                 style={{ flex: 1, minWidth: 105, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em",
                   background: "linear-gradient(135deg,#3b82f6,#1d4ed8)",
                   color: "#ffffff", transition: "opacity 150ms", boxShadow: "0 2px 10px rgba(59,130,246,0.35)" }}
@@ -592,27 +592,45 @@ function PedidoCard({ p, lang, onAction }: {
             </button>
             <button onClick={() => onAction(p.id, "en_camino")}
               style={{ flex: 1, minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 800, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em",
-                background: "linear-gradient(135deg,#8b5cf6,#6d28d9)",
-                color: "#ffffff", transition: "opacity 150ms", boxShadow: "0 2px 12px rgba(139,92,246,0.4)" }}
+                background: "linear-gradient(135deg,#3b82f6,#1d4ed8)",
+                color: "#ffffff", transition: "opacity 150ms", boxShadow: "0 2px 12px rgba(59,130,246,0.4)" }}
               onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
               onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
-              🛵 {lang === "en" ? "Start Delivery" : "Salir a Repartir"}
+              🛵 {lang === "en" ? "Send to Delivery" : "Enviar al Delivery"}
             </button>
           </>)}
           {p.estado === "en_camino" && (<>
-            <button onClick={() => onAction(p.id, "listo_reparto")}
+            <button onClick={() => onAction(p.id, "listo")}
+              title={lang === "en" ? "Back to kitchen" : "Revertir a cocina"}
               style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", fontWeight: 700, fontSize: 12, background: "rgba(255,255,255,0.04)", color: "rgba(243,237,224,0.5)", transition: "all 150ms" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}>
               ← {lang === "en" ? "Back" : "Volver"}
             </button>
-            <button onClick={() => onAction(p.id, "entregado")}
-              style={{ flex: 1, minWidth: 100, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em",
-                background: "linear-gradient(135deg,#10b981,#059669)",
-                color: "#ffffff", transition: "opacity 150ms", boxShadow: "0 2px 10px rgba(16,185,129,0.3)" }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
-              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
-              ✓ {lang === "en" ? "Delivered" : "Entregado"}
+            <button
+              disabled={true}
+              title={lang === "en" ? "Locked: awaiting rider to finalize delivery in the Delivery App" : "Bloqueado: esperando a que el repartidor finalice el reparto en la App de Delivery"}
+              style={{
+                flex: 1,
+                minWidth: 100,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.4rem",
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: "1.5px dashed rgba(255,255,255,0.2)",
+                cursor: "not-allowed",
+                fontWeight: 800,
+                fontSize: 12,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                background: "rgba(255,255,255,0.05)",
+                color: "rgba(243,237,224,0.45)",
+                opacity: 0.65
+              }}
+            >
+              🔒 ✓ {lang === "en" ? "Delivered" : "Entregado"}
             </button>
           </>)}
         </div>
