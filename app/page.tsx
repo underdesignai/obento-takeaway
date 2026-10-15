@@ -149,7 +149,7 @@ async function printTicket(p: PedidoDB) {
   <div class="order-num">${orderNum}</div>
   <div class="nombre">${p.nombre}</div>
   ${p.telefono ? `<div style="font-size:12px;margin-bottom:6px;">Tel: ${p.telefono}</div>` : ""}
-  ${hora ? `<div class="hora-block"><span class="hora-label-sm">${(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery") ? "Entrega a domicilio" : "Recogida en restaurante"}</span><span class="hora-val">${hora}</span></div>` : ""}
+  ${hora ? `<div class="hora-block"><span class="hora-label-sm">${(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery") ? "Entrega a domicilio" : "Recogida en local"}</span><span class="hora-val">${hora}</span></div>` : ""}
   <br>
   <div class="pago">${isPagado ? "✓ PAGADO ONLINE" : "💵 PAGO EN CAJA"}</div>
 </div>
@@ -304,7 +304,7 @@ function OrderDetailPopup({ p, lang, onClose }: { p: PedidoDB; lang: string; onC
                   <div style={{ fontSize: 10, color: "#a89f8d", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                     {(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery")
                       ? (lang === "en" ? "Delivery Time" : "Hora de Entrega")
-                      : (lang === "en" ? "Restaurant Pickup" : "Recogida en restaurante")}
+                      : (lang === "en" ? "Store Pickup" : "Recogida en local")}
                   </div>
                   <div style={{
                     fontSize: hora.length > 5 ? 16 : 22,
@@ -423,7 +423,7 @@ function PedidoCard({ p, lang, onAction }: {
               <span style={{ fontSize: 10, color: "#a89f8d", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>
                 {(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery")
                   ? (lang === "en" ? "Delivery" : "A Domicilio")
-                  : (lang === "en" ? "Restaurant Pickup" : "Recogida en restaurante")}
+                  : (lang === "en" ? "Store Pickup" : "Recogida en local")}
               </span>
               <span style={{
                 fontSize: hora.length > 5 ? 13 : 18,
