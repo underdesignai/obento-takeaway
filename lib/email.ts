@@ -188,39 +188,103 @@ export async function sendOrderPreparing(to: string, data: {
   orderNumber: string;
   horaRecogida?: string;
   lang?: string;
+  tipoEntrega?: string | null;
+  direccionEntrega?: string | null;
+  direccionDetalles?: string | null;
 }) {
   const en = data.lang === "en";
+  const isDelivery = data.tipoEntrega === "domicilio";
   const trackingUrl = `https://pedidos.obentojapanesefood.es/seguimiento?id=${data.orderNumber}`;
-  const html = baseLayout(en ? `
-    <h1 style="font-size:24px;color:#fbbf24;margin:0 0 10px;">Your order is being prepared! 👨‍🍳</h1>
-    <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hi <strong>${data.nombre}</strong>, our sushiman is preparing your dishes right now.</p>
-    <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
-      <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Order</p>
-      <p style="margin:4px 0 0;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
-    </div>
-    <div style="text-align:center;margin:24px 0;">
-      <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
-        🔴 Track Order Live →
-      </a>
-    </div>
-    <p style="font-size:13px;color:#9ca3af;margin-top:20px;">We will notify you immediately once it's ready.</p>
-  ` : `
-    <h1 style="font-size:24px;color:#fbbf24;margin:0 0 10px;">¡Tu pedido está en cocina! 👨‍🍳</h1>
-    <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hola <strong>${data.nombre}</strong>, nuestro sushiman ya está elaborando tus piezas al momento.</p>
-    <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
-      <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Pedido</p>
-      <p style="margin:4px 0 0;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
-    </div>
-    <div style="text-align:center;margin:24px 0;">
-      <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
-        🔴 Ver Estado en Directo →
-      </a>
-    </div>
-    <p style="font-size:13px;color:#9ca3af;margin-top:20px;">Te enviaremos otro aviso en cuanto esté listo para recoger.</p>
-  `);
+
+  let contentHtml = "";
+
+  if (isDelivery) {
+    contentHtml = en ? `
+      <div style="display:inline-block;padding:5px 12px;border-radius:20px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);color:#fbbf24;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;">
+        👨‍🍳 IN THE KITCHEN · HOME DELIVERY
+      </div>
+      <h1 style="font-size:24px;color:#fbbf24;margin:0 0 10px;">Your delivery order is being prepared! 👨‍🍳</h1>
+      <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hi <strong>${data.nombre}</strong>, our sushiman is crafting your sushi fresh right now.</p>
+      
+      <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+        <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Order Reference</p>
+        <p style="margin:4px 0 10px;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
+        <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;font-size:13px;color:#e5e7eb;">
+          📍 <strong>Delivery address:</strong> ${data.direccionEntrega || "Your address"}
+          ${data.direccionDetalles ? `<br/><span style="color:#9ca3af;font-size:12px;">(${data.direccionDetalles})</span>` : ""}
+        </div>
+      </div>
+
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+          🔴 Track Order Live →
+        </a>
+      </div>
+      <p style="font-size:13px;color:#9ca3af;margin-top:20px;">As soon as it is packed, our delivery rider will pick it up and you will receive an email letting you know they are on their way!</p>
+    ` : `
+      <div style="display:inline-block;padding:5px 12px;border-radius:20px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);color:#fbbf24;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;">
+        👨‍🍳 EN COCINA · ENTREGA A DOMICILIO
+      </div>
+      <h1 style="font-size:24px;color:#fbbf24;margin:0 0 10px;">¡Tu pedido a domicilio está en marcha! 👨‍🍳</h1>
+      <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hola <strong>${data.nombre}</strong>, nuestro sushiman ya está elaborando tus piezas al momento con ingredientes frescos.</p>
+      
+      <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+        <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Número de pedido</p>
+        <p style="margin:4px 0 10px;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
+        <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;font-size:13px;color:#e5e7eb;line-height:1.4;">
+          📍 <strong>Dirección de entrega:</strong><br/>
+          <span style="color:#cbd5e1;font-weight:600;">${data.direccionEntrega || "Dirección indicada en el pedido"}</span>
+          ${data.direccionDetalles ? `<br/><span style="color:#9ca3af;font-size:12px;">(${data.direccionDetalles})</span>` : ""}
+        </div>
+      </div>
+
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+          🔴 Ver Estado en Directo →
+        </a>
+      </div>
+      <p style="font-size:13px;color:#9ca3af;margin-top:20px;">En cuanto el pedido esté empaquetado y el repartidor coja la bolsa térmica, recibirás un correo avisándote de que va de camino a tu puerta.</p>
+    `;
+  } else {
+    // Recogida en local (Takeaway)
+    contentHtml = en ? `
+      <h1 style="font-size:24px;color:#fbbf24;margin:0 0 10px;">Your order is being prepared! 👨‍🍳</h1>
+      <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hi <strong>${data.nombre}</strong>, our sushiman is preparing your dishes right now.</p>
+      <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+        <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Order</p>
+        <p style="margin:4px 0 0;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
+      </div>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+          🔴 Track Order Live →
+        </a>
+      </div>
+      <p style="font-size:13px;color:#9ca3af;margin-top:20px;">We will notify you immediately once it's ready.</p>
+    ` : `
+      <h1 style="font-size:24px;color:#fbbf24;margin:0 0 10px;">¡Tu pedido está en cocina! 👨‍🍳</h1>
+      <p style="color:#d1d5db;font-size:15px;margin:0 0 20px;">Hola <strong>${data.nombre}</strong>, nuestro sushiman ya está elaborando tus piezas al momento.</p>
+      <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+        <p style="margin:0;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">Pedido</p>
+        <p style="margin:4px 0 0;font-size:26px;font-weight:800;color:#c9a84c;font-family:monospace;">${data.orderNumber}</p>
+      </div>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:13px 26px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+          🔴 Ver Estado en Directo →
+        </a>
+      </div>
+      <p style="font-size:13px;color:#9ca3af;margin-top:20px;">Te enviaremos otro aviso en cuanto esté listo para recoger.</p>
+    `;
+  }
+
+  const html = baseLayout(contentHtml);
 
   try {
-    const subject = en ? `Your order is in the kitchen · ${data.orderNumber}` : `Tu pedido está en cocina · ${data.orderNumber}`;
+    let subject = "";
+    if (isDelivery) {
+      subject = en ? `Your delivery order is in the kitchen · ${data.orderNumber}` : `¡Tu pedido a domicilio está en cocina! 👨‍🍳 · ${data.orderNumber}`;
+    } else {
+      subject = en ? `Your order is in the kitchen · ${data.orderNumber}` : `Tu pedido está en cocina · ${data.orderNumber}`;
+    }
     await sendEmailTransport(to, subject, html);
     console.log(`✉️ Email de pedido en cocina enviado a ${to} (${data.orderNumber})`);
   } catch (err) {

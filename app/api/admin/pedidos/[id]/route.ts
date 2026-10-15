@@ -62,6 +62,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         nombre: pedido.cliente_nombre,
         orderNumber: pedido.numero_pedido || `OB-${String(pedido.id).padStart(4, "0")}`,
         horaRecogida: pedido.hora_recogida ?? undefined,
+        tipoEntrega: pedido.tipo_entrega,
+        direccionEntrega: pedido.direccion_entrega,
+        direccionDetalles: pedido.direccion_detalles,
         lang: "es",
       }).catch((err) => console.error("Error auto-notificando por email en preparando:", err));
     }
