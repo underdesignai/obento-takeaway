@@ -108,7 +108,12 @@ export async function sendOrderReady(to: string, data: {
   lang?: string;
   isPagado?: boolean;
   total?: number;
+  tipoEntrega?: string | null;
 }) {
+  if (data.tipoEntrega === "domicilio" || data.tipoEntrega === "delivery") {
+    console.warn(`[sendOrderReady] Omitido: el pedido ${data.orderNumber} es a domicilio.`);
+    return;
+  }
   const en = data.lang === "en";
   const trackingUrl = `https://pedidos.obentojapanesefood.es/seguimiento?id=${data.orderNumber}`;
   const totalFormatted = data.total != null ? data.total.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
@@ -292,3 +297,144 @@ export async function sendOrderPreparing(to: string, data: {
     console.error("[sendOrderPreparing error]", err);
   }
 }
+
+export async function sendOrderInDeliveryEmail(to: string, data: {
+  nombre: string;
+  orderNumber: string;
+  direccionEntrega?: string | null;
+  direccionDetalles?: string | null;
+  codigoPostal?: string | null;
+  repartidorNombre?: string | null;
+  metodoPago?: string;
+  estadoPago?: string;
+  total?: number;
+  items?: { nombre?: string; name?: string; cantidad?: number; qty?: number; subtotal?: number; price?: number }[];
+  lang?: string;
+}) {
+  if (!to) return;
+  const en = data.lang === "en";
+  const isEfectivo = data.metodoPago === "efectivo" || (data.metodoPago !== "stripe" && data.estadoPago !== "pagado");
+  const rider = data.repartidorNombre ? data.repartidorNombre : (en ? "Our delivery rider" : "Nuestro repartidor");
+  const trackingUrl = `https://pedidos.obentojapanesefood.es/seguimiento?id=${data.orderNumber}`;
+  const totalFormatted = data.total != null ? data.total.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+
+  const paymentNoticeHtml = isEfectivo ? (en ? `
+    <div style="background:rgba(251,191,36,0.1);border:1.5px solid rgba(251,191,36,0.35);border-radius:8px;padding:14px 18px;margin-bottom:22px;">
+      <div style="font-size:13px;font-weight:800;color:#fbbf24;margin-bottom:4px;">
+        💵 PENDING PAYMENT IN CASH / CARD AT DOOR
+      </div>
+      <div style="font-size:13px;color:#e5e7eb;">
+        Total due to delivery rider: <strong>${totalFormatted} €</strong>.
+      </div>
+    </div>
+  ` : `
+    <div style="background:rgba(251,191,36,0.1);border:1.5px solid rgba(251,191,36,0.35);border-radius:8px;padding:14px 18px;margin-bottom:22px;">
+      <div style="font-size:13px;font-weight:800;color:#fbbf24;margin-bottom:4px;">
+        💵 PAGO PENDIENTE A LA ENTREGA
+      </div>
+      <div style="font-size:13px;color:#e5e7eb;">
+        Por favor ten preparado el importe para agilizar la entrega: <strong>${totalFormatted} €</strong>.
+      </div>
+    </div>
+  `) : (en ? `
+    <div style="background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.35);border-radius:8px;padding:12px 18px;margin-bottom:22px;">
+      <div style="font-size:13px;font-weight:800;color:#4ade80;">
+        ✓ ORDER PAID ONLINE WITH CARD
+      </div>
+      <div style="font-size:13px;color:#d1d5db;margin-top:2px;">
+        You don't need to pay anything to the rider. Just receive and enjoy!
+      </div>
+    </div>
+  ` : `
+    <div style="background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.35);border-radius:8px;padding:12px 18px;margin-bottom:22px;">
+      <div style="font-size:13px;font-weight:800;color:#4ade80;">
+        ✓ PEDIDO PAGADO ONLINE CON TARJETA
+      </div>
+      <div style="font-size:13px;color:#d1d5db;margin-top:2px;">
+        No tienes que pagar nada al repartidor. Solo recoger tu pedido y disfrutar.
+      </div>
+    </div>
+  `);
+
+  const contentHtml = en ? `
+    <div style="display:inline-block;padding:6px 14px;border-radius:20px;background:rgba(192,132,252,0.15);border:1.5px solid rgba(192,132,252,0.4);color:#c084fc;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;">
+      🛵 ORDER ON ITS WAY!
+    </div>
+    <h1 style="font-size:24px;color:#f3ede0;margin:0 0 10px;font-weight:900;line-height:1.2;">
+      Your food is on its way to your door! 🍣💨
+    </h1>
+    <p style="color:#d1d5db;font-size:15px;line-height:1.5;margin:0 0 20px;">
+      Hi <strong>${data.nombre}</strong>, <strong>${rider}</strong> has just departed from our restaurant with your freshly made order packed in thermal bags to ensure it arrives hot and perfect.
+    </p>
+    <div style="background:rgba(200,30,34,0.08);border:1px solid rgba(200,30,34,0.3);border-radius:10px;padding:18px 20px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">ORDER REFERENCE</span>
+        <span style="font-family:monospace;font-size:24px;font-weight:900;color:#c81e22;">${data.orderNumber}</span>
+      </div>
+      <div style="font-size:14px;color:#f3ede0;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;margin-top:6px;line-height:1.4;">
+        📍 <strong>Delivery address:</strong><br/>
+        <span style="color:#cbd5e1;font-weight:600;">${data.direccionEntrega || "Delivery address"}</span>
+        ${data.direccionDetalles ? `<br/><span style="color:#9ca3af;font-size:12px;">(${data.direccionDetalles})</span>` : ""}
+        ${data.codigoPostal ? `<br/><span style="color:#9ca3af;font-size:12px;">ZIP ${data.codigoPostal}</span>` : ""}
+      </div>
+      <div style="font-size:13px;color:#d1d5db;margin-top:10px;">
+        ⏱️ <strong>Estimated arrival:</strong> <span style="color:#4ade80;font-weight:bold;">15 - 25 minutes approx.</span>
+      </div>
+    </div>
+    ${paymentNoticeHtml}
+    <div style="text-align:center;margin:24px 0 20px;">
+      <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:14px 28px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:14px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+        🔴 Track Order Live →
+      </a>
+    </div>
+    <p style="font-size:13px;color:#9ca3af;text-align:center;margin:20px 0 0;">
+      Enjoy your meal! 🥢
+    </p>
+  ` : `
+    <div style="display:inline-block;padding:6px 14px;border-radius:20px;background:rgba(192,132,252,0.15);border:1.5px solid rgba(192,132,252,0.4);color:#c084fc;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;">
+      🛵 ¡PEDIDO EN CAMINO!
+    </div>
+    <h1 style="font-size:24px;color:#f3ede0;margin:0 0 10px;font-weight:900;line-height:1.2;">
+      ¡Tu comida va en camino a tu puerta! 🍣💨
+    </h1>
+    <p style="color:#d1d5db;font-size:15px;line-height:1.5;margin:0 0 20px;">
+      Hola <strong>${data.nombre}</strong>, te informamos de que <strong>${rider}</strong> acaba de salir de nuestro restaurante con tu pedido recién elaborado y empaquetado térmicamente para que llegue perfecto a tu domicilio.
+    </p>
+    <div style="background:rgba(200,30,34,0.08);border:1px solid rgba(200,30,34,0.3);border-radius:10px;padding:18px 20px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.15em;">NÚMERO DE PEDIDO</span>
+        <span style="font-family:monospace;font-size:24px;font-weight:900;color:#c81e22;">${data.orderNumber}</span>
+      </div>
+      <div style="font-size:14px;color:#f3ede0;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;margin-top:6px;line-height:1.4;">
+        📍 <strong>Dirección de entrega:</strong><br/>
+        <span style="color:#cbd5e1;font-weight:600;">${data.direccionEntrega || "Dirección indicada en el pedido"}</span>
+        ${data.direccionDetalles ? `<br/><span style="color:#9ca3af;font-size:12px;">(${data.direccionDetalles})</span>` : ""}
+        ${data.codigoPostal ? `<br/><span style="color:#9ca3af;font-size:12px;">C.P. ${data.codigoPostal}</span>` : ""}
+      </div>
+      <div style="font-size:13px;color:#d1d5db;margin-top:10px;">
+        ⏱️ <strong>Tiempo estimado de llegada:</strong> <span style="color:#4ade80;font-weight:bold;">15 - 25 minutos aprox.</span>
+      </div>
+    </div>
+    ${paymentNoticeHtml}
+    <div style="text-align:center;margin:24px 0 20px;">
+      <a href="${trackingUrl}" target="_blank" style="display:inline-block;padding:14px 28px;border-radius:8px;background:linear-gradient(135deg, #c81e22 0%, #99151b 100%);color:#ffffff;text-decoration:none;font-weight:800;font-size:14px;letter-spacing:0.06em;text-transform:uppercase;box-shadow:0 4px 18px rgba(200,30,34,0.4);">
+        🔴 Seguir Estado del Pedido en Directo →
+      </a>
+    </div>
+    <p style="font-size:13px;color:#9ca3af;text-align:center;margin:20px 0 0;">
+      El repartidor se pondrá en contacto al llegar si tiene cualquier duda con el portal o timbre.<br/>
+      ¡Buen provecho! 🥢
+    </p>
+  `;
+
+  const html = baseLayout(contentHtml);
+
+  try {
+    const subject = en ? `🛵 Your order is on its way to your door! · ${data.orderNumber} · OBENTO` : `🛵 ¡Tu pedido va de camino a tu puerta! · ${data.orderNumber} · OBENTO`;
+    await sendEmailTransport(to, subject, html);
+    console.log(`✉️ Email de salida a reparto enviado con éxito a ${to} (${data.orderNumber})`);
+  } catch (err: any) {
+    console.error(`⚠️ Error enviando email de salida a reparto:`, err);
+  }
+}
+

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { sendOrderReady, sendOrderPreparing } from "@/lib/email";
+import { sendOrderReady, sendOrderPreparing, sendOrderInDeliveryEmail } from "@/lib/email";
 import { getSessionRole, deny403 } from "@/lib/auth";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -17,6 +17,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       if (!pedido) return Response.json({ error: "Pedido no encontrado" }, { status: 404 });
       if (!pedido.cliente_email) return Response.json({ error: "El pedido no tiene email" }, { status: 400 });
 
+      // Los pedidos a domicilio NO se notifican para recogida en local
+      if (pedido.tipo_entrega === "domicilio" || pedido.tipo_entrega === "delivery") {
+        return Response.json({ ok: false, error: "Los pedidos a domicilio se avisan al salir a reparto" }, { status: 400 });
+      }
+
       await prisma.pedidos.update({
         where: { id: Number(id) },
         data: { cliente_notificado: true, updated_at: new Date() },
@@ -28,6 +33,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         nombre: pedido.cliente_nombre,
         orderNumber: pedido.numero_pedido || `OB-${String(pedido.id).padStart(4, "0")}`,
         horaRecogida: pedido.hora_recogida ?? undefined,
+        tipoEntrega: pedido.tipo_entrega,
         isPagado,
         total: Number(pedido.total),
         lang: "es",
@@ -46,6 +52,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     };
     if (dbEstado === "recibido" || dbEstado === "preparando") {
       dataToUpdate.cliente_notificado = false;
+    }
+    if (dbEstado === "en_camino") {
+      dataToUpdate.fecha_salida_reparto = new Date();
     }
     if (dbEstado === "entregado") {
       dataToUpdate.estado_pago = "pagado";
@@ -67,6 +76,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         direccionDetalles: pedido.direccion_detalles,
         lang: "es",
       }).catch((err) => console.error("Error auto-notificando por email en preparando:", err));
+    }
+
+    // Envío automático al pasar a 'en_camino' para pedidos a domicilio
+    if (dbEstado === "en_camino" && pedido.cliente_email) {
+      sendOrderInDeliveryEmail(pedido.cliente_email, {
+        nombre: pedido.cliente_nombre,
+        orderNumber: pedido.numero_pedido || `OB-${String(pedido.id).padStart(4, "0")}`,
+        direccionEntrega: pedido.direccion_entrega,
+        direccionDetalles: pedido.direccion_detalles,
+        codigoPostal: pedido.codigo_postal,
+        repartidorNombre: pedido.repartidor_nombre,
+        metodoPago: pedido.metodo_pago,
+        estadoPago: pedido.estado_pago,
+        total: Number(pedido.total),
+        lang: "es",
+      }).catch((err) => console.error("Error enviando email en_camino:", err));
     }
 
     return Response.json(pedido);

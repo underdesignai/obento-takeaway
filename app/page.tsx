@@ -528,7 +528,7 @@ function PedidoCard({ p, lang, onAction }: {
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}>
               ← {lang === "en" ? "Back" : "Volver"}
             </button>
-            {p.email && (
+            {p.email && p.tipoEntrega !== "domicilio" && p.tipoEntrega !== "delivery" && (
               <button
                 onClick={handleNotifyClick}
                 disabled={isNotifying}
@@ -583,8 +583,24 @@ function PedidoCard({ p, lang, onAction }: {
               </button>
             )}
           </>)}
-          {(p.estado === "listo_reparto" || p.estado === "en_camino") && (<>
+          {p.estado === "listo_reparto" && (<>
             <button onClick={() => onAction(p.id, "listo")}
+              style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", fontWeight: 700, fontSize: 12, background: "rgba(255,255,255,0.04)", color: "rgba(243,237,224,0.5)", transition: "all 150ms" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}>
+              ← {lang === "en" ? "Back" : "Volver"}
+            </button>
+            <button onClick={() => onAction(p.id, "en_camino")}
+              style={{ flex: 1, minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 800, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em",
+                background: "linear-gradient(135deg,#8b5cf6,#6d28d9)",
+                color: "#ffffff", transition: "opacity 150ms", boxShadow: "0 2px 12px rgba(139,92,246,0.4)" }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+              🛵 {lang === "en" ? "Start Delivery" : "Salir a Repartir"}
+            </button>
+          </>)}
+          {p.estado === "en_camino" && (<>
+            <button onClick={() => onAction(p.id, "listo_reparto")}
               style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", fontWeight: 700, fontSize: 12, background: "rgba(255,255,255,0.04)", color: "rgba(243,237,224,0.5)", transition: "all 150ms" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}>
