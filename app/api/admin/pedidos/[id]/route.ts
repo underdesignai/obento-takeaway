@@ -63,6 +63,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const pedido = await prisma.pedidos.update({
       where: { id: Number(id) },
       data: dataToUpdate,
+      include: { pedido_items: true },
     });
 
     // Envío automático al pasar a 'preparando' si el cliente tiene email registrado
@@ -74,6 +75,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         tipoEntrega: pedido.tipo_entrega,
         direccionEntrega: pedido.direccion_entrega,
         direccionDetalles: pedido.direccion_detalles,
+        metodoPago: pedido.metodo_pago,
+        estadoPago: pedido.estado_pago,
+        total: Number(pedido.total),
         lang: "es",
       }).catch((err) => console.error("Error auto-notificando por email en preparando:", err));
     }
@@ -90,6 +94,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         metodoPago: pedido.metodo_pago,
         estadoPago: pedido.estado_pago,
         total: Number(pedido.total),
+        items: pedido.pedido_items,
         lang: "es",
       }).catch((err) => console.error("Error enviando email en_camino:", err));
     }
