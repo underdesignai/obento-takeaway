@@ -149,7 +149,7 @@ async function printTicket(p: PedidoDB) {
   <div class="order-num">${orderNum}</div>
   <div class="nombre">${p.nombre}</div>
   ${p.telefono ? `<div style="font-size:12px;margin-bottom:6px;">Tel: ${p.telefono}</div>` : ""}
-  ${hora ? `<div class="hora-block"><span class="hora-label-sm">Hora de Recogida</span><span class="hora-val">${hora}</span></div>` : ""}
+  ${hora ? `<div class="hora-block"><span class="hora-label-sm">${(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery") ? "Entrega a domicilio" : "Recogida en restaurante"}</span><span class="hora-val">${hora}</span></div>` : ""}
   <br>
   <div class="pago">${isPagado ? "✓ PAGADO ONLINE" : "💵 PAGO EN CAJA"}</div>
 </div>
@@ -301,7 +301,11 @@ function OrderDetailPopup({ p, lang, onClose }: { p: PedidoDB; lang: string; onC
               <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", background: "rgba(200,30,34,0.08)", borderRadius: 10, padding: "0.875rem 1.125rem", border: "1px solid rgba(200,30,34,0.25)" }}>
                 <span style={{ fontSize: 24 }}>🕐</span>
                 <div>
-                  <div style={{ fontSize: 10, color: "#a89f8d", textTransform: "uppercase", letterSpacing: "0.1em" }}>{lang === "en" ? "Pickup Time" : "Hora de Recogida"}</div>
+                  <div style={{ fontSize: 10, color: "#a89f8d", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    {(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery")
+                      ? (lang === "en" ? "Delivery Time" : "Hora de Entrega")
+                      : (lang === "en" ? "Restaurant Pickup" : "Recogida en restaurante")}
+                  </div>
                   <div style={{
                     fontSize: hora.length > 5 ? 16 : 22,
                     fontWeight: 700,
@@ -417,7 +421,9 @@ function PedidoCard({ p, lang, onAction }: {
           {hora && (
             <div style={{ marginTop: "0.3rem", display: "flex", alignItems: "baseline", gap: "0.45rem", flexWrap: "wrap" }}>
               <span style={{ fontSize: 10, color: "#a89f8d", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>
-                {lang === "en" ? "Pickup" : "Recogida"}
+                {(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery")
+                  ? (lang === "en" ? "Delivery" : "A Domicilio")
+                  : (lang === "en" ? "Restaurant Pickup" : "Recogida en restaurante")}
               </span>
               <span style={{
                 fontSize: hora.length > 5 ? 13 : 18,
