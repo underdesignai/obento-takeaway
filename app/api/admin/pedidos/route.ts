@@ -192,6 +192,7 @@ export async function GET() {
         metodoPago: isOnlinePay ? "stripe" : "local",
         estadoPago: p.estado_pago,
         estado: estadoUI,
+        clienteNotificado: Boolean(p.cliente_notificado),
         total: Number(p.total),
         createdAt: p.created_at ? p.created_at.toISOString() : new Date().toISOString(),
         items,

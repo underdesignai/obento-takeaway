@@ -36,6 +36,7 @@ type PedidoDB = {
   email?: string | null;
   notas?: string | null;
   metodoPago?: string | null;
+  clienteNotificado?: boolean;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -365,6 +366,25 @@ function PedidoCard({ p, lang, onAction }: {
   onAction: (id: number, estado: string, extra?: string) => void;
 }) {
   const [showDetail, setShowDetail] = useState(false);
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [localNotified, setLocalNotified] = useState(Boolean(p.clienteNotificado));
+
+  useEffect(() => {
+    setLocalNotified(Boolean(p.clienteNotificado));
+  }, [p.clienteNotificado]);
+
+  const handleNotifyClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isNotifying) return;
+    setIsNotifying(true);
+    setLocalNotified(true);
+    try {
+      await onAction(p.id, "listo", "notify");
+    } finally {
+      setIsNotifying(false);
+    }
+  };
+
   const isPagado = p.metodoPago !== "local" && p.metodoPago !== "restaurante";
   const hora = p.horaRecogida ? formatHora(p.horaRecogida) : null;
   const stopped = p.estado === "listo";
@@ -505,11 +525,37 @@ function PedidoCard({ p, lang, onAction }: {
               ← {lang === "en" ? "Back" : "Volver"}
             </button>
             {p.email && (
-              <button onClick={() => onAction(p.id, "listo", "notify")}
-                style={{ display: "flex", alignItems: "center", gap: "0.35rem", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(200,30,34,0.3)", cursor: "pointer", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em", background: "rgba(200,30,34,0.12)", color: "#ef4444", transition: "all 150ms" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(200,30,34,0.22)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(200,30,34,0.12)"; }}>
-                ✉️ {lang === "en" ? "Notify" : "Avisar"}
+              <button
+                onClick={handleNotifyClick}
+                disabled={isNotifying}
+                title={localNotified ? (lang === "en" ? "Customer notified (click to resend)" : "Cliente avisado (clic para reenviar correo)") : (lang === "en" ? "Notify customer by email that order is ready" : "Avisar al cliente por email que su pedido está listo")}
+                className={!localNotified ? "btn-avisar-parpadeo" : ""}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: localNotified ? "1px solid rgba(74,222,128,0.35)" : "1px solid rgba(239,68,68,0.6)",
+                  cursor: isNotifying ? "wait" : "pointer",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  background: localNotified ? "rgba(74,222,128,0.12)" : "rgba(200,30,34,0.15)",
+                  color: localNotified ? "#4ade80" : "#ef4444",
+                  transition: "all 150ms",
+                }}
+                onMouseEnter={e => {
+                  if (localNotified) e.currentTarget.style.background = "rgba(74,222,128,0.22)";
+                }}
+                onMouseLeave={e => {
+                  if (localNotified) e.currentTarget.style.background = "rgba(74,222,128,0.12)";
+                }}
+              >
+                {localNotified
+                  ? `✓ ${isNotifying ? (lang === "en" ? "Sending..." : "Enviando...") : (lang === "en" ? "Notified" : "Avisado")}`
+                  : `✉️ ${isNotifying ? (lang === "en" ? "Sending..." : "Enviando...") : (lang === "en" ? "Notify" : "Avisar")}`}
               </button>
             )}
             {(p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery") ? (
@@ -802,6 +848,7 @@ function MonitorInner() {
 
   const handleAction = async (id: number, estado: string, extra?: string) => {
     if (extra === "notify") {
+      setPedidos(prev => prev.map(p => p.id === id ? { ...p, clienteNotificado: true } : p));
       await fetch(`/api/admin/pedidos/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ _action: "notify" }) });
       return;
     }
@@ -809,7 +856,7 @@ function MonitorInner() {
     if (estado === "entregado") {
       setPedidos(prev => prev.filter(p => p.id !== id));
     } else {
-      setPedidos(prev => prev.map(p => p.id === id ? { ...p, estado } : p));
+      setPedidos(prev => prev.map(p => p.id === id ? { ...p, estado, clienteNotificado: estado === "listo" ? p.clienteNotificado : false } : p));
     }
     try {
       await fetch(`/api/admin/pedidos/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ estado }) });
@@ -866,6 +913,27 @@ function MonitorInner() {
 
   return (
     <div style={{ height: "100dvh", background: "#0c0b0a", color: "#f3ede0", fontFamily: "var(--font-dm-sans), system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <style>{`
+        @keyframes avisarPulse {
+          0%, 100% {
+            background: rgba(200, 30, 34, 0.15);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+            transform: scale(1);
+          }
+          50% {
+            background: #ef4444;
+            border-color: #f87171;
+            color: #ffffff;
+            box-shadow: 0 0 16px 5px rgba(239, 68, 68, 0.85);
+            transform: scale(1.05);
+          }
+        }
+        .btn-avisar-parpadeo {
+          animation: avisarPulse 1s ease-in-out infinite !important;
+        }
+      `}</style>
 
       {/* POPUP LIMITAR */}
       {showLimitarPopup && (

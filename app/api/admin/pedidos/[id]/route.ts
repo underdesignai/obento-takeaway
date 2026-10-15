@@ -23,19 +23,30 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         horaRecogida: pedido.hora_recogida ?? undefined,
         lang: "es",
       });
-      return Response.json({ ok: true });
+
+      await prisma.pedidos.update({
+        where: { id: Number(id) },
+        data: { cliente_notificado: true, updated_at: new Date() },
+      });
+
+      return Response.json({ ok: true, clienteNotificado: true });
     }
 
     if (!estado) return Response.json({ error: "estado requerido" }, { status: 400 });
 
     const dbEstado = estado === "nuevo" ? "recibido" : estado;
 
+    const dataToUpdate: any = {
+      estado_pedido: dbEstado,
+      updated_at: new Date(),
+    };
+    if (dbEstado === "recibido" || dbEstado === "preparando") {
+      dataToUpdate.cliente_notificado = false;
+    }
+
     const pedido = await prisma.pedidos.update({
       where: { id: Number(id) },
-      data: {
-        estado_pedido: dbEstado,
-        updated_at: new Date(),
-      },
+      data: dataToUpdate,
     });
 
     // Envío automático al pasar a 'preparando' si el cliente tiene email registrado
@@ -46,16 +57,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         horaRecogida: pedido.hora_recogida ?? undefined,
         lang: "es",
       }).catch((err) => console.error("Error auto-notificando por email en preparando:", err));
-    }
-
-    // Envío automático al pasar a 'listo' si el cliente tiene email registrado
-    if (dbEstado === "listo" && pedido.cliente_email) {
-      sendOrderReady(pedido.cliente_email, {
-        nombre: pedido.cliente_nombre,
-        orderNumber: pedido.numero_pedido || `OB-${String(pedido.id).padStart(4, "0")}`,
-        horaRecogida: pedido.hora_recogida ?? undefined,
-        lang: "es",
-      }).catch((err) => console.error("Error auto-notificando por email en takeaway:", err));
     }
 
     return Response.json(pedido);
