@@ -1,14 +1,6 @@
-FROM node:22-slim
+FROM obento-monitor-base:latest
 
 WORKDIR /app
-
-# Install openssl for Prisma engines
-RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
-
-COPY package*.json ./
-COPY prisma ./prisma/
-
-RUN npm config set fetch-retries 5 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && npm ci --prefer-offline --no-audit
 
 COPY . .
 
