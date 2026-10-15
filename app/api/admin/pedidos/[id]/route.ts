@@ -17,17 +17,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       if (!pedido) return Response.json({ error: "Pedido no encontrado" }, { status: 404 });
       if (!pedido.cliente_email) return Response.json({ error: "El pedido no tiene email" }, { status: 400 });
 
-      await sendOrderReady(pedido.cliente_email, {
-        nombre: pedido.cliente_nombre,
-        orderNumber: pedido.numero_pedido || `OB-${String(pedido.id).padStart(4, "0")}`,
-        horaRecogida: pedido.hora_recogida ?? undefined,
-        lang: "es",
-      });
-
       await prisma.pedidos.update({
         where: { id: Number(id) },
         data: { cliente_notificado: true, updated_at: new Date() },
       });
+
+      sendOrderReady(pedido.cliente_email, {
+        nombre: pedido.cliente_nombre,
+        orderNumber: pedido.numero_pedido || `OB-${String(pedido.id).padStart(4, "0")}`,
+        horaRecogida: pedido.hora_recogida ?? undefined,
+        lang: "es",
+      }).catch((err) => console.error("Error enviando email en notify:", err));
 
       return Response.json({ ok: true, clienteNotificado: true });
     }
