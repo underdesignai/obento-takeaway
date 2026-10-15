@@ -434,6 +434,13 @@ function PedidoCard({ p, lang, onAction }: {
                 🛵 {lang === "en" ? "On the way" : "En camino"}
               </span>
             )}
+            {p.estado === "delivery_entregado" && (
+              <span className="btn-delivery-entregado-parpadeo" style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em",
+                padding: "2px 8px", borderRadius: 20,
+                background: "rgba(34,197,94,0.25)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.6)" }}>
+                ✓ Reparto Finalizado
+              </span>
+            )}
           </div>
           <div style={{ fontSize: 19, fontWeight: 700, color: "#f3ede0", lineHeight: 1.2, letterSpacing: "-0.01em" }}>{p.nombre}</div>
           {p.direccionEntrega && (
@@ -633,6 +640,35 @@ function PedidoCard({ p, lang, onAction }: {
               🔒 ✓ {lang === "en" ? "Delivered" : "Entregado"}
             </button>
           </>)}
+          {p.estado === "delivery_entregado" && (
+            <button
+              onClick={() => onAction(p.id, "entregado")}
+              className="btn-delivery-entregado-parpadeo"
+              title={lang === "en" ? "Rider confirmed delivery! Click to finish order" : "¡El repartidor ha confirmado la entrega! Haz clic para finalizar y archivar el pedido"}
+              style={{
+                flex: 1,
+                minWidth: 140,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.45rem",
+                padding: "9px 15px",
+                borderRadius: 8,
+                border: "2px solid #22c55e",
+                cursor: "pointer",
+                fontWeight: 900,
+                fontSize: 12,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                background: "linear-gradient(135deg, #16a34a, #15803d)",
+                color: "#ffffff",
+                boxShadow: "0 0 20px rgba(34, 197, 94, 0.75)",
+                transition: "all 150ms",
+              }}
+            >
+              🛵 {lang === "en" ? "DELIVERY DELIVERED" : "DELIVERY ENTREGADO"}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -947,7 +983,7 @@ function MonitorInner() {
 
   const nuevos     = sortByProximity(pedidosFiltrados.filter(p => p.estado === "nuevo"));
   const preparando = sortByProximity(pedidosFiltrados.filter(p => p.estado === "preparando"));
-  const listos     = sortByProximity(pedidosFiltrados.filter(p => ["listo", "listo_reparto", "en_camino"].includes(p.estado)));
+  const listos     = sortByProximity(pedidosFiltrados.filter(p => ["listo", "listo_reparto", "en_camino", "delivery_entregado"].includes(p.estado)));
 
   const COLS = [
     { key: "nuevo"      as const, title: lang === "en" ? "New"       : "Nuevos",     color: "#60a5fa", icon: "🆕", data: nuevos     },
@@ -976,6 +1012,26 @@ function MonitorInner() {
         }
         .btn-avisar-parpadeo {
           animation: avisarPulse 1s ease-in-out infinite !important;
+        }
+
+        @keyframes deliveryEntregadoPulse {
+          0%, 100% {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            border-color: #22c55e;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+            transform: scale(1);
+          }
+          50% {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-color: #86efac;
+            color: #ffffff;
+            box-shadow: 0 0 25px 6px rgba(34, 197, 94, 0.95);
+            transform: scale(1.04);
+          }
+        }
+        .btn-delivery-entregado-parpadeo {
+          animation: deliveryEntregadoPulse 0.9s ease-in-out infinite !important;
         }
       `}</style>
 
