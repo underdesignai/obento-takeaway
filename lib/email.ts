@@ -24,6 +24,7 @@ async function sendEmailTransport(to: string, subject: string, html: string) {
 
   // 1. Resend API prioritario
   if (resendKey) {
+    const cleanFrom = from.includes("<") ? from : `OBENTO Japanese Food <${from}>`;
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -31,7 +32,7 @@ async function sendEmailTransport(to: string, subject: string, html: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `OBENTO Japanese Food <${from}>`,
+        from: cleanFrom,
         to: [to],
         subject,
         html,
