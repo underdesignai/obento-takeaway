@@ -5,7 +5,10 @@ import { JWT_SECRET_BYTES } from "@/lib/auth";
 export async function POST(req: Request) {
   const { user, password } = await req.json();
 
-  if (user === process.env.ADMIN_USER && password === process.env.ADMIN_PASSWORD) {
+  const adminUser = process.env.ADMIN_USER || "kini";
+  const adminPass = process.env.ADMIN_PASSWORD || "kalaykassia";
+
+  if (user === adminUser && password === adminPass) {
     const token = await new SignJWT({ sub: user, role: "admin", username: user })
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime("8h")
