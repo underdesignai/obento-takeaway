@@ -109,36 +109,49 @@ async function printTicket(p: PedidoDB) {
 <html><head><meta charset="utf-8">
 <title>Ticket ${orderNum}</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Courier New',Courier,monospace;font-size:17px;background:#fff;color:#000;max-width:340px;margin:0 auto;padding:12px;}
-  .logo{text-align:center;padding:10px 0;}
-  .logo h1{font-size:29px;letter-spacing:3px;font-weight:900;}
-  .logo p{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#444;}
-  .logo-divider{border:none;border-top:2px dashed #000;margin:10px 0;}
-  .priority{padding:10px 0;text-align:center;border-bottom:1px dashed #000;}
-  .order-num{font-size:39px;font-weight:900;letter-spacing:1px;line-height:1;}
-  .order-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:4px;}
-  .nombre{font-size:21px;font-weight:700;margin:6px 0 10px;}
-  .hora-block{display:inline-block;border:2.5px solid #000;background:#fff;color:#000;padding:6px 14px;border-radius:4px;margin:6px auto 10px;text-align:center;max-width:92%;}
-  .hora-val{font-size:18px;font-weight:900;line-height:1.25;color:#000;}
-  .pago{display:inline-block;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:14px;border:1.5px solid #000;margin-top:4px;}
-  .notas-block{padding:10px 0;border-bottom:1px dashed #000;}
-  .section-label{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:#666;margin-bottom:4px;}
-  .notas-text{font-size:17px;color:#000;line-height:1.4;font-weight:bold;}
-  .notas-empty{font-size:16px;color:#888;font-style:italic;}
-  .items-block{padding:10px 0;border-bottom:1px dashed #000;}
-  .item{display:flex;justify-content:space-between;padding:3px 0;font-size:17px;}
+  *{box-sizing:border-box;margin:0;padding:0;color:#000!important;}
+  body{
+    font-family:'Courier New',Courier,monospace;
+    font-size:16px;
+    background:#fff;
+    color:#000;
+    width:100%;
+    max-width:100%;
+    margin:0 auto;
+    padding:4px 2px;
+  }
+  .logo{text-align:center;padding:8px 0;}
+  .logo h1{font-size:27.5px;letter-spacing:2px;font-weight:900;color:#000;}
+  .logo p{font-size:12.5px;letter-spacing:1px;text-transform:uppercase;color:#000;font-weight:bold;}
+  .logo-divider{border:none;border-top:2px dashed #000;margin:8px 0;}
+  .priority{padding:8px 0;text-align:center;border-bottom:1px dashed #000;}
+  .order-num{font-size:37px;font-weight:900;letter-spacing:1px;line-height:1;color:#000;}
+  .order-label{font-size:12.5px;text-transform:uppercase;letter-spacing:2px;color:#000;margin-bottom:4px;font-weight:bold;}
+  .nombre{font-size:20px;font-weight:700;margin:6px 0 8px;color:#000;}
+  .hora-block{display:inline-block;border:2px solid #000;background:#fff;color:#000;padding:5px 12px;border-radius:4px;margin:5px auto 8px;text-align:center;max-width:96%;}
+  .hora-val{font-size:17px;font-weight:900;line-height:1.2;color:#000;}
+  .pago{display:inline-block;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 10px;border-radius:12px;border:1.5px solid #000;color:#000;margin-top:4px;}
+  .notas-block{padding:8px 0;border-bottom:1px dashed #000;}
+  .section-label{font-size:12.5px;text-transform:uppercase;letter-spacing:1.5px;color:#000;margin-bottom:4px;font-weight:bold;}
+  .notas-text{font-size:16px;color:#000;line-height:1.35;font-weight:bold;}
+  .notas-empty{font-size:15px;color:#000;font-style:italic;}
+  .items-block{padding:8px 0;border-bottom:1px dashed #000;}
+  .item{display:flex;justify-content:space-between;padding:3px 0;font-size:16px;color:#000;}
   .item-qty{font-weight:900;margin-right:6px;}
-  .item-price{color:#333;font-weight:700;}
-  .totals-block{padding:10px 0;}
-  .subtotal-row{display:flex;justify-content:space-between;font-size:16px;color:#555;margin-bottom:3px;}
-  .iva-row{display:flex;justify-content:space-between;font-size:16px;color:#555;margin-bottom:6px;}
-  .total-row{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid #000;padding-top:8px;}
-  .total-label{font-size:17px;text-transform:uppercase;letter-spacing:1.5px;font-weight:bold;}
-  .total-val{font-size:29px;font-weight:900;}
-  .footer{padding:12px 0;text-align:center;border-top:1px dashed #000;margin-top:10px;}
-  .footer-name{font-size:17px;font-weight:900;}
-  .footer-sub{font-size:14px;color:#444;margin-top:3px;}
+  .item-price{color:#000;font-weight:700;}
+  .totals-block{padding:8px 0;}
+  .subtotal-row{display:flex;justify-content:space-between;font-size:15px;color:#000;margin-bottom:3px;}
+  .iva-row{display:flex;justify-content:space-between;font-size:15px;color:#000;margin-bottom:5px;}
+  .total-row{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid #000;padding-top:6px;}
+  .total-label{font-size:16px;text-transform:uppercase;letter-spacing:1.5px;font-weight:bold;color:#000;}
+  .total-val{font-size:27.5px;font-weight:900;color:#000;}
+  .footer{padding:10px 0;text-align:center;border-top:1px dashed #000;margin-top:8px;}
+  .footer-name{font-size:16px;font-weight:900;color:#000;}
+  .footer-sub{font-size:13px;color:#000;margin-top:3px;}
+  @media print {
+    @page { margin: 0; size: auto; }
+    body { width: 100%; max-width: 100%; margin: 0; padding: 1mm 0mm; }
+  }
 </style>
 </head><body>
 <div class="logo">
@@ -150,7 +163,7 @@ async function printTicket(p: PedidoDB) {
   <div class="order-label">${isDomicilio ? "PEDIDO A DOMICILIO" : "PEDIDO TAKE AWAY"}</div>
   <div class="order-num">${orderNum}</div>
   <div class="nombre">${p.nombre}</div>
-  ${p.telefono ? `<div style="font-size:16px;margin-bottom:6px;">Tel: ${p.telefono}</div>` : ""}
+  ${p.telefono ? `<div style="font-size:15px;margin-bottom:6px;">Tel: ${p.telefono}</div>` : ""}
   ${hora ? `<div class="hora-block"><span class="hora-val">${hora}</span></div>` : ""}
   <br>
   <div class="pago">${pagoTexto}</div>
@@ -159,7 +172,7 @@ ${isDomicilio && p.direccionEntrega ? `
 <div class="notas-block">
   <div class="section-label">DIRECCIÓN DE ENTREGA:</div>
   <div class="notas-text">${p.direccionEntrega}${p.codigoPostal ? ` (${p.codigoPostal})` : ""}</div>
-  ${p.direccionDetalles ? `<div style="font-size:14px;margin-top:3px;">Notas: ${p.direccionDetalles}</div>` : ""}
+  ${p.direccionDetalles ? `<div style="font-size:13px;margin-top:3px;">Notas: ${p.direccionDetalles}</div>` : ""}
 </div>
 ` : ""}
 <div class="notas-block">
