@@ -51,15 +51,42 @@ function extractTimeStr(horaRecogida: string): string {
   return horaRecogida;
 }
 
-function parseHoraMin(horaRecogida: string): number {
-  const timeStr = extractTimeStr(horaRecogida);
-  if (timeStr && timeStr.includes(":")) {
-    const [hh, mm] = timeStr.split(":").map(Number);
-    return (hh || 0) * 60 + (mm || 0);
+function getTargetTimestamp(horaRecogida?: string | null, createdAt?: string): number {
+  const createdDate = createdAt ? new Date(createdAt) : new Date();
+  const createdMs = isNaN(createdDate.getTime()) ? Date.now() : createdDate.getTime();
+
+  if (!horaRecogida) {
+    return createdMs + 25 * 60 * 1000;
   }
-  // Default for "lo antes posible" or unspecified: treat as now + 25 mins
-  const now = new Date();
-  return now.getHours() * 60 + now.getMinutes() + 25;
+
+  // 1. Duración relativa: "En 1 hora" (sin "y")
+  if (/en\s+1\s+hora(?!\s+y)/i.test(horaRecogida)) {
+    return createdMs + 60 * 60 * 1000;
+  }
+  // 2. Duración relativa: "En 1 hora y ..." (ej: "En 1 hora y 30 minutos")
+  if (/en\s+1\s+hora\s+y/i.test(horaRecogida)) {
+    return createdMs + 90 * 60 * 1000;
+  }
+
+  // 3. Hora fija especificada: "HH:MM" (ej: "21:30" o "Para cenar a las 21:30h")
+  const match = horaRecogida.match(/(\d{1,2}):(\d{2})/);
+  if (match) {
+    const target = new Date(createdMs);
+    target.setHours(parseInt(match[1], 10), parseInt(match[2], 10), 0, 0);
+    if (target.getTime() < createdMs - 12 * 3600 * 1000) {
+      target.setDate(target.getDate() + 1);
+    }
+    return target.getTime();
+  }
+
+  // 4. Por defecto ("Lo antes posible (~35-45 min)" o sin especificar): 25 minutos desde que entra el pedido
+  return createdMs + 25 * 60 * 1000;
+}
+
+function parseHoraMin(horaRecogida: string, createdAt?: string): number {
+  const targetMs = getTargetTimestamp(horaRecogida, createdAt);
+  const d = new Date(targetMs);
+  return d.getHours() * 60 + d.getMinutes();
 }
 
 function formatHora(horaRecogida: string): string {
@@ -68,18 +95,9 @@ function formatHora(horaRecogida: string): string {
 
 function sortByProximity(lista: PedidoDB[]): PedidoDB[] {
   return [...lista].sort((a, b) => {
-    const now = new Date();
-    const nowMins = now.getHours() * 60 + now.getMinutes();
-    const minsA = a.horaRecogida ? parseHoraMin(a.horaRecogida) : null;
-    const minsB = b.horaRecogida ? parseHoraMin(b.horaRecogida) : null;
-    if (minsA === null && minsB === null) return 0;
-    if (minsA === null) return 1;
-    if (minsB === null) return -1;
-    const futA = minsA >= nowMins;
-    const futB = minsB >= nowMins;
-    if (futA && futB) return minsA - minsB;
-    if (!futA && !futB) return minsB - minsA;
-    return futA ? -1 : 1;
+    const targetA = getTargetTimestamp(a.horaRecogida, a.createdAt);
+    const targetB = getTargetTimestamp(b.horaRecogida, b.createdAt);
+    return targetA - targetB;
   });
 }
 
@@ -203,7 +221,7 @@ ${isDomicilio && p.direccionEntrega ? `
 
 // ── Countdown Timer ──────────────────────────────────────────────────────────
 
-function Countdown({ horaRecogida, stopped, lang }: { horaRecogida: string; stopped: boolean; lang: string }) {
+function Countdown({ horaRecogida, createdAt, stopped, lang }: { horaRecogida?: string | null; createdAt?: string; stopped: boolean; lang: string }) {
   const [display, setDisplay] = useState({ hours: 0, mins: 0, secs: 0, negative: false });
 
   useEffect(() => {
@@ -211,12 +229,10 @@ function Countdown({ horaRecogida, stopped, lang }: { horaRecogida: string; stop
       setDisplay({ hours: 0, mins: 0, secs: 0, negative: false });
       return;
     }
+    const targetMs = getTargetTimestamp(horaRecogida, createdAt);
     const tick = () => {
-      const now = new Date();
-      const nowSecs = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-      const targetMins = parseHoraMin(horaRecogida);
-      const targetSecs = targetMins * 60;
-      const diffSecs = targetSecs - nowSecs;
+      const nowMs = Date.now();
+      const diffSecs = Math.round((targetMs - nowMs) / 1000);
       const negative = diffSecs < 0;
       const abs = Math.abs(diffSecs);
       setDisplay({
@@ -229,7 +245,7 @@ function Countdown({ horaRecogida, stopped, lang }: { horaRecogida: string; stop
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [horaRecogida, stopped]);
+  }, [horaRecogida, createdAt, stopped]);
 
   const { hours, mins, secs, negative } = display;
   const totalMins = hours * 60 + mins + secs / 60;
@@ -237,7 +253,7 @@ function Countdown({ horaRecogida, stopped, lang }: { horaRecogida: string; stop
   if (stopped) color = "#4ade80";
   else if (negative) color = "#ef4444";
   else if (totalMins <= 5) color = "#f59e0b";
-  else if (totalMins <= 20) color = "#f97316";
+  else if (totalMins <= 15) color = "#f97316";
 
   const sign = negative && !stopped ? "-" : "";
   const timeStr = hours > 0
@@ -246,10 +262,24 @@ function Countdown({ horaRecogida, stopped, lang }: { horaRecogida: string; stop
 
   return (
     <div style={{ textAlign: "center", minWidth: 90 }}>
-      <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(255,255,255,0.4)", marginBottom: 2 }}>
+      <div style={{
+        fontSize: 9,
+        textTransform: "uppercase",
+        letterSpacing: "0.15em",
+        color: stopped ? "#4ade80" : negative ? "#ef4444" : "rgba(255,255,255,0.4)",
+        fontWeight: negative ? 800 : 600,
+        marginBottom: 2
+      }}>
         {stopped ? (lang === "en" ? "Ready" : "Listo") : negative ? (lang === "en" ? "Delayed" : "Retrasado") : (lang === "en" ? "Left" : "Quedan")}
       </div>
-      <div style={{ fontFamily: "monospace", fontSize: hours > 0 ? 20 : 25, fontWeight: 700, color, letterSpacing: "0.03em", lineHeight: 1 }}>
+      <div style={{
+        fontFamily: "monospace",
+        fontSize: hours > 0 ? 20 : 25,
+        fontWeight: 700,
+        color,
+        letterSpacing: "0.03em",
+        lineHeight: 1
+      }}>
         {timeStr}
       </div>
     </div>
@@ -412,7 +442,7 @@ function PedidoCard({ p, lang, onAction }: {
 
   const isPagado = p.metodoPago !== "local" && p.metodoPago !== "restaurante";
   const hora = p.horaRecogida ? formatHora(p.horaRecogida) : null;
-  const stopped = p.estado === "listo";
+  const stopped = ["listo", "listo_reparto", "en_camino", "delivery_entregado", "entregado"].includes(p.estado);
   const orderNum = p.numeroPedido || `OB-${String(p.id).padStart(4, "0")}`;
 
   return (
@@ -489,7 +519,7 @@ function PedidoCard({ p, lang, onAction }: {
             </div>
           )}
         </div>
-        {hora && <Countdown horaRecogida={p.horaRecogida!} stopped={stopped} lang={lang} />}
+        <Countdown horaRecogida={p.horaRecogida} createdAt={p.createdAt} stopped={stopped} lang={lang} />
       </div>
 
       {/* Fila 2: items con imágenes */}
