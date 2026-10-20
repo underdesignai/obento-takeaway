@@ -118,9 +118,9 @@ async function printTicket(p: PedidoDB) {
   .order-num{font-size:39px;font-weight:900;letter-spacing:1px;line-height:1;}
   .order-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:4px;}
   .nombre{font-size:21px;font-weight:700;margin:6px 0 10px;}
-  .hora-block{display:inline-block;background:#000;color:#fff;padding:6px 16px;border-radius:4px;margin-bottom:8px;}
-  .hora-label-sm{font-size:12px;text-transform:uppercase;letter-spacing:1px;opacity:0.8;display:block;}
-  .hora-val{font-size:36px;font-weight:900;line-height:1.1;}
+  .hora-block{display:inline-block;border:2.5px solid #000;background:#fff;color:#000;padding:6px 14px;border-radius:4px;margin:6px auto 10px;text-align:center;max-width:92%;}
+  .hora-label-sm{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#000;display:block;margin-bottom:3px;}
+  .hora-val{font-size:18px;font-weight:900;line-height:1.25;color:#000;}
   .pago{display:inline-block;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:14px;border:1.5px solid #000;margin-top:4px;}
   .notas-block{padding:10px 0;border-bottom:1px dashed #000;}
   .section-label{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:#666;margin-bottom:4px;}
