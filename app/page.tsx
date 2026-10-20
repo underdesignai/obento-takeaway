@@ -97,9 +97,10 @@ async function fetchIva(): Promise<number> {
 async function printTicket(p: PedidoDB) {
   const iva = await fetchIva();
   const isPagado = p.metodoPago !== "local" && p.metodoPago !== "restaurante";
+  const isDomicilio = p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery";
+  const pagoTexto = isPagado ? "✓ PAGADO ONLINE" : (isDomicilio ? "💵 PAGO EN MANO" : "💵 PAGO EN CAJA");
   const orderNum = p.numeroPedido || `OB-${String(p.id).padStart(4, "0")}`;
   const hora = p.horaRecogida ? formatHora(p.horaRecogida) : null;
-  const isDomicilio = p.tipoEntrega === "domicilio" || p.tipoEntrega === "delivery";
   const baseImponible = p.total / (1 + iva / 100);
   const ivaAmount = p.total - baseImponible;
   const win = window.open("", "_blank", "width=420,height=680");
@@ -119,7 +120,6 @@ async function printTicket(p: PedidoDB) {
   .order-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:4px;}
   .nombre{font-size:21px;font-weight:700;margin:6px 0 10px;}
   .hora-block{display:inline-block;border:2.5px solid #000;background:#fff;color:#000;padding:6px 14px;border-radius:4px;margin:6px auto 10px;text-align:center;max-width:92%;}
-  .hora-label-sm{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:#000;display:block;margin-bottom:3px;}
   .hora-val{font-size:18px;font-weight:900;line-height:1.25;color:#000;}
   .pago{display:inline-block;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:14px;border:1.5px solid #000;margin-top:4px;}
   .notas-block{padding:10px 0;border-bottom:1px dashed #000;}
@@ -143,7 +143,7 @@ async function printTicket(p: PedidoDB) {
 </head><body>
 <div class="logo">
   <h1>OBENTO</h1>
-  <p>JAPANESE FOOD · KITCHEN KDS</p>
+  <p>JAPANESE FOOD</p>
 </div>
 <hr class="logo-divider">
 <div class="priority">
@@ -151,9 +151,9 @@ async function printTicket(p: PedidoDB) {
   <div class="order-num">${orderNum}</div>
   <div class="nombre">${p.nombre}</div>
   ${p.telefono ? `<div style="font-size:16px;margin-bottom:6px;">Tel: ${p.telefono}</div>` : ""}
-  ${hora ? `<div class="hora-block"><span class="hora-label-sm">${isDomicilio ? "Entrega a domicilio" : "Recogida en local"}</span><span class="hora-val">${hora}</span></div>` : ""}
+  ${hora ? `<div class="hora-block"><span class="hora-val">${hora}</span></div>` : ""}
   <br>
-  <div class="pago">${isPagado ? "✓ PAGADO ONLINE" : "💵 PAGO EN CAJA"}</div>
+  <div class="pago">${pagoTexto}</div>
 </div>
 ${isDomicilio && p.direccionEntrega ? `
 <div class="notas-block">
