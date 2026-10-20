@@ -118,7 +118,7 @@ async function printTicket(p: PedidoDB) {
     width:100%;
     max-width:320px;
     margin:0 auto;
-    padding:6px 8px;
+    padding:6px 16px;
   }
   .logo{text-align:center;padding:8px 0;}
   .logo h1{font-size:27.5px;letter-spacing:2px;font-weight:900;color:#000;}
@@ -149,8 +149,8 @@ async function printTicket(p: PedidoDB) {
   .footer-name{font-size:16px;font-weight:900;color:#000;}
   .footer-sub{font-size:13px;color:#000;margin-top:3px;}
   @media print {
-    @page { margin: 1.5mm; size: auto; }
-    body { width: 100%; max-width: 100%; margin: 0 auto; padding: 2px 4px; }
+    @page { margin: 3mm; size: auto; }
+    body { width: 100%; max-width: 100%; margin: 0 auto; padding: 2px 8px; }
   }
 </style>
 </head><body>
