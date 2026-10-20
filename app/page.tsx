@@ -109,84 +109,66 @@ async function printTicket(p: PedidoDB) {
 <title>Ticket ${orderNum}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-    font-size:14px;
-    font-weight:700;
-    background:#fff;
-    color:#000;
-    max-width:320px;
-    margin:0 auto;
-    padding:8px 10px;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
-  }
-  .logo{text-align:center;padding:6px 0 8px;}
-  .logo h1{font-size:26px;letter-spacing:2px;font-weight:900;line-height:1;color:#000;}
-  .logo p{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:800;color:#000;margin-top:4px;}
-  .divider{border:none;border-top:2px dashed #000;margin:8px 0;}
-  .priority{padding:8px 0;text-align:center;border-bottom:2px dashed #000;}
-  .order-label{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;color:#000;margin-bottom:4px;}
-  .order-num{font-size:34px;font-weight:900;letter-spacing:1px;line-height:1.1;color:#000;}
-  .nombre{font-size:20px;font-weight:900;color:#000;margin:6px 0 4px;text-transform:uppercase;}
-  .telefono{font-size:15px;font-weight:800;color:#000;margin-bottom:8px;}
-  .hora-block{display:inline-block;background:#000;color:#fff;padding:6px 16px;border-radius:6px;margin:4px 0 8px;}
-  .hora-label-sm{font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:800;display:block;color:#fff;}
-  .hora-val{font-size:30px;font-weight:900;line-height:1.1;color:#fff;}
-  .pago{display:inline-block;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;padding:4px 12px;border-radius:6px;border:2px solid #000;color:#000;margin-top:4px;}
-  .section{padding:8px 0;border-bottom:2px dashed #000;}
-  .section-label{font-size:13px;text-transform:uppercase;letter-spacing:1px;font-weight:900;color:#000;margin-bottom:4px;}
-  .direccion-text{font-size:15px;font-weight:900;line-height:1.3;color:#000;}
-  .direccion-detalles{font-size:13px;font-weight:800;color:#000;margin-top:3px;}
-  .notas-text{font-size:15px;color:#000;line-height:1.35;font-weight:900;}
-  .notas-empty{font-size:13px;color:#000;font-weight:700;font-style:italic;}
-  .item{display:flex;justify-content:space-between;align-items:flex-start;padding:4px 0;font-size:15px;font-weight:800;color:#000;}
-  .item-left{display:flex;align-items:flex-start;}
-  .item-qty{font-weight:900;font-size:16px;margin-right:6px;white-space:nowrap;}
-  .item-name{font-weight:800;line-height:1.2;}
-  .item-price{font-weight:900;white-space:nowrap;margin-left:8px;}
-  .totals-block{padding:8px 0 4px;}
-  .subtotal-row,.iva-row{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#000;margin-bottom:3px;}
-  .total-row{display:flex;justify-content:space-between;align-items:baseline;border-top:2.5px solid #000;padding-top:6px;margin-top:4px;}
-  .total-label{font-size:16px;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;color:#000;}
-  .total-val{font-size:26px;font-weight:900;color:#000;}
-  .footer{padding:10px 0;text-align:center;border-top:2px dashed #000;margin-top:8px;}
-  .footer-name{font-size:14px;font-weight:900;color:#000;}
-  .footer-sub{font-size:12px;font-weight:800;color:#000;margin-top:3px;}
-  @media print {
-    @page { margin: 1.5mm; size: auto; }
-    body { width: 100%; max-width: 100%; padding: 4px; margin: 0; }
-  }
+  body{font-family:'Courier New',Courier,monospace;font-size:17px;background:#fff;color:#000;max-width:340px;margin:0 auto;padding:12px;}
+  .logo{text-align:center;padding:10px 0;}
+  .logo h1{font-size:29px;letter-spacing:3px;font-weight:900;}
+  .logo p{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#444;}
+  .logo-divider{border:none;border-top:2px dashed #000;margin:10px 0;}
+  .priority{padding:10px 0;text-align:center;border-bottom:1px dashed #000;}
+  .order-num{font-size:39px;font-weight:900;letter-spacing:1px;line-height:1;}
+  .order-label{font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:4px;}
+  .nombre{font-size:21px;font-weight:700;margin:6px 0 10px;}
+  .hora-block{display:inline-block;background:#000;color:#fff;padding:6px 16px;border-radius:4px;margin-bottom:8px;}
+  .hora-label-sm{font-size:12px;text-transform:uppercase;letter-spacing:1px;opacity:0.8;display:block;}
+  .hora-val{font-size:36px;font-weight:900;line-height:1.1;}
+  .pago{display:inline-block;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:14px;border:1.5px solid #000;margin-top:4px;}
+  .notas-block{padding:10px 0;border-bottom:1px dashed #000;}
+  .section-label{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:#666;margin-bottom:4px;}
+  .notas-text{font-size:17px;color:#000;line-height:1.4;font-weight:bold;}
+  .notas-empty{font-size:16px;color:#888;font-style:italic;}
+  .items-block{padding:10px 0;border-bottom:1px dashed #000;}
+  .item{display:flex;justify-content:space-between;padding:3px 0;font-size:17px;}
+  .item-qty{font-weight:900;margin-right:6px;}
+  .item-price{color:#333;font-weight:700;}
+  .totals-block{padding:10px 0;}
+  .subtotal-row{display:flex;justify-content:space-between;font-size:16px;color:#555;margin-bottom:3px;}
+  .iva-row{display:flex;justify-content:space-between;font-size:16px;color:#555;margin-bottom:6px;}
+  .total-row{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid #000;padding-top:8px;}
+  .total-label{font-size:17px;text-transform:uppercase;letter-spacing:1.5px;font-weight:bold;}
+  .total-val{font-size:29px;font-weight:900;}
+  .footer{padding:12px 0;text-align:center;border-top:1px dashed #000;margin-top:10px;}
+  .footer-name{font-size:17px;font-weight:900;}
+  .footer-sub{font-size:14px;color:#444;margin-top:3px;}
 </style>
 </head><body>
 <div class="logo">
   <h1>OBENTO</h1>
   <p>JAPANESE FOOD · KITCHEN KDS</p>
 </div>
-<hr class="divider">
+<hr class="logo-divider">
 <div class="priority">
-  <div class="order-label">${isDomicilio ? "ENTREGA A DOMICILIO" : "PEDIDO TAKE AWAY"}</div>
+  <div class="order-label">${isDomicilio ? "PEDIDO A DOMICILIO" : "PEDIDO TAKE AWAY"}</div>
   <div class="order-num">${orderNum}</div>
   <div class="nombre">${p.nombre}</div>
-  ${p.telefono ? `<div class="telefono">Tel: ${p.telefono}</div>` : ""}
+  ${p.telefono ? `<div style="font-size:16px;margin-bottom:6px;">Tel: ${p.telefono}</div>` : ""}
   ${hora ? `<div class="hora-block"><span class="hora-label-sm">${isDomicilio ? "Entrega a domicilio" : "Recogida en local"}</span><span class="hora-val">${hora}</span></div>` : ""}
   <br>
   <div class="pago">${isPagado ? "✓ PAGADO ONLINE" : "💵 PAGO EN CAJA"}</div>
 </div>
 ${isDomicilio && p.direccionEntrega ? `
-<div class="section">
-  <div class="section-label">Dirección de Entrega:</div>
-  <div class="direccion-text">${p.direccionEntrega}${p.codigoPostal ? ` (${p.codigoPostal})` : ""}</div>
-  ${p.direccionDetalles ? `<div class="direccion-detalles">Notas dirección: ${p.direccionDetalles}</div>` : ""}
+<div class="notas-block">
+  <div class="section-label">DIRECCIÓN DE ENTREGA:</div>
+  <div class="notas-text">${p.direccionEntrega}${p.codigoPostal ? ` (${p.codigoPostal})` : ""}</div>
+  ${p.direccionDetalles ? `<div style="font-size:14px;margin-top:3px;">Notas: ${p.direccionDetalles}</div>` : ""}
 </div>
 ` : ""}
-<div class="section">
+<div class="notas-block">
   <div class="section-label">Notas de Cocina:</div>
   ${p.notas ? `<div class="notas-text">⚠️ ${p.notas}</div>` : `<div class="notas-empty">Sin notas especiales</div>`}
 </div>
-<div class="section">
+<div class="items-block">
   <div class="section-label">Platos solicitados:</div>
-  ${p.items.map(i => `<div class="item"><div class="item-left"><span class="item-qty">${i.qty}×</span><span class="item-name">${i.name}</span></div><span class="item-price">${(i.qty * i.price).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span></div>`).join("")}
+  ${p.items.map(i => `<div class="item"><span><span class="item-qty">${i.qty}×</span>${i.name}</span><span class="item-price">${(i.qty * i.price).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span></div>`).join("")}
 </div>
 <div class="totals-block">
   <div class="subtotal-row"><span>Base Imponible</span><span>${baseImponible.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span></div>
