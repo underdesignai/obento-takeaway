@@ -27,6 +27,16 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "OBENTO · Monitor Take Away",
   description: "Monitor en vivo de pedidos take away y cocina de OBENTO Japanese Food.",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
